@@ -25,9 +25,6 @@ import locationAPI from "@/lib/locationAPI";
 import accountAPI from "@/lib/accountAPI";
 import inventoryItemAPI from "@/lib/InventoryItemApi";
 
-// Layout
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 
 const ItemsIndex = () => {
   const navigate = useNavigate();
@@ -382,11 +379,7 @@ const ItemsIndex = () => {
   ];
 
   return (
-    <div className="flex h-full min-h-screen bg-white-50">
-      <Sidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
-        <main className="flex-1 p-6 overflow-hidden flex flex-col relative">
+    <div className="h-full">
           {/* Header Section */}
           <InventoryHeader
             onExportExcel={handleExportExcel}
@@ -488,8 +481,6 @@ const ItemsIndex = () => {
             onUpdateStatus={handleUpdateStatusClick}
             visibleColumns={visibleColumns}
           />
-        </main>
-      </div>
     </div>
   );
 };

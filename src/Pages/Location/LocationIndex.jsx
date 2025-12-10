@@ -1,8 +1,6 @@
 // src/pages/Location/LocationIndex.jsx
 import React, { useEffect, useState } from "react";
 import locationAPI from "@/lib/locationAPI";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import {
   Dialog,
   DialogContent,
@@ -105,11 +103,7 @@ const LocationIndex = () => {
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
-        <main className="flex-1 p-6 bg-gray-100">
+    <div className="h-full">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-xl font-bold">Locations</h1>
             <Button
@@ -193,8 +187,6 @@ const LocationIndex = () => {
               </TableBody>
             </Table>
           </div>
-        </main>
-      </div>
 
       {/* Modal */}
       <Dialog open={open} onOpenChange={setOpen} size="sm">

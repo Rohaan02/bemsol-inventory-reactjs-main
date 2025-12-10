@@ -1,7 +1,5 @@
 // src/Pages/Units/UnitIndex.jsx
 import React, { useEffect, useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import unitAPI from "@/lib/unitAPI";
 import { toast } from "react-toastify";
 import {
@@ -111,15 +109,7 @@ const UnitIndex = () => {
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1">
-        <Header />
-
-        <main className="p-6">
+    <div className="h-full">
           <div className="bg-white shadow rounded-lg p-4">
             {/* Header Section */}
             <div className="flex justify-between items-center mb-4">
@@ -225,8 +215,6 @@ const UnitIndex = () => {
               </button>
             </div>
           </div>
-        </main>
-      </div>
 
       {/* Modal */}
       <Dialog open={open} onOpenChange={setOpen} size="sm">

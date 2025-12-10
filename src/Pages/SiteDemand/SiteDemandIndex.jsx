@@ -1,8 +1,6 @@
 // src/pages/SiteDemands/SiteDemandIndex.jsx
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/themes";
@@ -57,7 +55,6 @@ import Select from "react-select";
 import { useAuth } from "../../contexts/AuthContext";
 
 const SiteDemandIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [demands, setDemands] = useState([]);
   const [meta, setMeta] = useState({});
   const [loading, setLoading] = useState(true);
@@ -821,13 +818,9 @@ const SiteDemandIndex = () => {
     Object.values(columnVisibility).filter(Boolean).length;
 
   return (
-    <div className="flex h-full min-h-screen bg-white-500">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {/* Full Width Container */}
-          <div className="w-full mx-auto">
+    <div className="h-full">
+      {/* Full Width Container */}
+      <div className="w-full mx-auto">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -1376,19 +1369,17 @@ const SiteDemandIndex = () => {
               </CardContent>
             </Card>
           </div>
-        </main>
 
-        {/* Transfer Modal */}
-        <InterStoreTransfer
-          isOpen={transferModalOpen}
-          onClose={() => {
-            setTransferModalOpen(false);
-            setSelectedDemandForTransfer(null);
-          }}
-          onSubmit={handleTransferSubmit}
-          demand={selectedDemandForTransfer}
-        />
-      </div>
+      {/* Transfer Modal */}
+      <InterStoreTransfer
+        isOpen={transferModalOpen}
+        onClose={() => {
+          setTransferModalOpen(false);
+          setSelectedDemandForTransfer(null);
+        }}
+        onSubmit={handleTransferSubmit}
+        demand={selectedDemandForTransfer}
+      />
     </div>
   );
 };

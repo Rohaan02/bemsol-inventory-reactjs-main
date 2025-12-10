@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 
 // Icons
 import { Plus, Edit, Trash2, Eye, Car, Loader2, Search, Download, ChevronUp, ChevronDown, CheckSquare, Square } from "lucide-react";
@@ -212,26 +210,14 @@ const VehicleIndex = () => {
 
   if (loading) {
     return (
-      <div className="flex h-full min-h-screen bg-gray-100">
-        <Sidebar />
-        <div className="flex flex-col flex-1">
-          <Header />
-          <main className="flex-1 p-6 overflow-y-auto">
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-            </div>
-          </main>
-        </div>
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
-        <main className="flex-1 p-6 overflow-y-auto">
+    <div className="h-full">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Vehicle Management</h1>
@@ -472,8 +458,6 @@ const VehicleIndex = () => {
               </div>
             </CardContent>
           </Card>
-        </main>
-      </div>
     </div>
   );
 };

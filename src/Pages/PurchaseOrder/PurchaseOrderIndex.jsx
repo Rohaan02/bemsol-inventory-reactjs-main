@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -545,11 +543,7 @@ export default function PurchaseOrderIndex() {
   }, [visibleColumns]);
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header />
-        <main className="flex-1 p-6 overflow-y-auto">
+    <div className="h-full">
           {/* Header Section */}
           <div className="flex justify-between items-center pb-4 border-b border-gray-200 mb-4">
             <div className="flex items-center">
@@ -1252,8 +1246,6 @@ export default function PurchaseOrderIndex() {
               </div>
             </CardContent>
           </Card>
-        </main>
-      </div>
     </div>
   );
 }

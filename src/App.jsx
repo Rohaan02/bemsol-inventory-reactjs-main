@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 
 import Login from "./components/auth/Login";
@@ -76,114 +77,109 @@ function App() {
   }, []);
   return (
     <>
-      <div
-        className="app-scae"
-        style={{
-          transform: "scale(0.8)",
-          transformOrigin: "top left",
-          width: "calc(100vw / 0.8)", // auto compensates for scale
-          height: "calc(100vh / 0.8)", // auto compensates for scale
-          overflow: "auto",
-          fontFamily: "sans-serif",
-        }}
-      >
+      <div>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Protected routes with Layout */}
           <Route
-            path="/dashboard"
+            path="/*"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Layout />
               </ProtectedRoute>
             }
-          />
-          <Route path="/category" element={<CategoryIndex />} />
-          <Route path="/accounts" element={<AccountsIndex />} />
-          <Route path="/location" element={<LocationIndex />} />
-          <Route path="/unit-measurement" element={<UnitIndex />} />
-          <Route path="/item-type" element={<ItemType />} />
-          <Route path="/item-sub-type" element={<ItemSubTypeIndex />} />
-          <Route path="/app-settings" element={<SettingsIndex />} />
-          <Route path="/inventory" element={<ItemsIndex />} />
-          <Route path="/inventory/add" element={<AddItem />} />
-          <Route path="/inventory/edit/:id" element={<EditItem />} />
-          <Route path="/untracked-items" element={<UntrackItemIndex />} />
-          <Route path="/untrack-items/add" element={<AddUntrackItem />} />
-          <Route path="/untrack-items/edit/:id" element={<EditUntrackItem />} />
-          <Route path="/item-tracking/track/:id" element={<ItemTracking />} />
-          <Route path="/users" element={<UserIndex />} />
-          <Route path="/users/add" element={<AddNewUser />} />
-          <Route path="/users/edit/:id" element={<EditUser />} />
-          <Route path="/user-permissions/:id" element={<UserPermissions />} />
-          <Route path="/assets" element={<AssetIndex />} />
-          <Route path="/assets/add" element={<AddAsset />} />
-          <Route path="/assets/edit/:id" element={<EditAsset />} />
-          <Route path="/vehicles" element={<VehicleIndex />} />
-          <Route path="/vehicles/add" element={<AddVehicle />} />
-          <Route path="/vehicles/edit/:id" element={<EditVehicle />} />
-          <Route path="/Manufacturers" element={<ManufacturersIndex />} />
-          <Route path="/Manufacturers/add" element={<AddManufacturer />} />
-          <Route
-            path="/Manufacturers/edit/:id"
-            element={<EditManufacturer />}
-          />
-          <Route path="/conditions" element={<ConditionIndex />} />
-          <Route path="/vendors" element={<VendorIndex />} />
-          <Route path="/vendors/add" element={<AddVendor />} />
-          <Route path="/vendors/edit/:id" element={<EditVendor />} />
-          <Route path="/site-demands" element={<SiteDemandIndex />} />
-          <Route path="/site-demands/add" element={<AddSiteDemand />} />
-          <Route path="/site-demands/edit/:id" element={<EditSiteDemand />} />
-          <Route path="/site-demands/show/:id" element={<ViewSiteDemand />} />
-          <Route path="/market-purchases" element={<MarketPurchaseIndex />} />
-          <Route
-            path="/market-purchases/create"
-            element={<AddMarketPurchase />}
-          />
-          <Route
-            path="/market-purchases/:id/edit"
-            element={<EditMarketPurchase />}
-          />
-          <Route
-            path="/market-purchases/:id/view"
-            element={<ViewMarketPurchase />}
-          />
-          <Route path="/whts" element={<WhtIndex />} />
-          <Route path="/wht/add" element={<AddWht />} />
-          <Route path="/wht/edit/:id" element={<EditWht />} />
-          {/* Tax Payer Type routes */}
-          <Route path="tax-payer-types" element={<TaxPayerTypeIndex />} />
-          <Route path="tax-payer-types/add" element={<AddTaxPayerType />} />
-          <Route
-            path="tax-payer-types/edit/:id"
-            element={<EditTaxPayerType />}
-          />
-          <Route path="/categorymenu" element={<CategoryMenu />} />
-          <Route path="/banks" element={<BankIndex />} />
-          <Route path="/purchase-orders" element={<PurchaseOrderIndex />} />
-          <Route path="/purchase-orders/add" element={<AddPurchaseOrder />} />
-          <Route
-            path="/purchase-orders/:id/edit"
-            element={<EditPurchaseOrder />}
-          />
-          <Route path="/purchase-orders/:id" element={<ViewPurchaseOrder />} />
-          <Route path="/site-purchases" element={<SitePurchaseIndex />} />
-          <Route path="/site-purchase/create" element={<SitePurchaseAdd />} />
-          <Route path="/uoms" element={<UomIndex />} />
-          <Route
-            path="/market-purchase/show/:id"
-            element={<ViewMarketPurchase />}
-          />
-          <Route path="/permissions" element={<PermissionsIndex />} />
-          <Route path="/employees" element={<EmployeeIndex />} />
-          <Route path="/site-demands/track/:id" element={<TrackDemand />} />
-          <Route path="/untrack-items/show/:id" element={<ViewUntrackItem />} />
-          <Route path="/inter-transfer" element={<InterTransferIndex />} />
-          <Route
-            path="/purchase-order/show/:id"
-            element={<ShowPurchaseOrder />}
-          />
+          >
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="category" element={<CategoryIndex />} />
+            <Route path="accounts" element={<AccountsIndex />} />
+            <Route path="location" element={<LocationIndex />} />
+            <Route path="unit-measurement" element={<UnitIndex />} />
+            <Route path="item-type" element={<ItemType />} />
+            <Route path="item-sub-type" element={<ItemSubTypeIndex />} />
+            <Route path="app-settings" element={<SettingsIndex />} />
+            <Route path="inventory" element={<ItemsIndex />} />
+            <Route path="inventory/add" element={<AddItem />} />
+            <Route path="inventory/edit/:id" element={<EditItem />} />
+            <Route path="untracked-items" element={<UntrackItemIndex />} />
+            <Route path="untrack-items/add" element={<AddUntrackItem />} />
+            <Route path="untrack-items/edit/:id" element={<EditUntrackItem />} />
+            <Route path="item-tracking/track/:id" element={<ItemTracking />} />
+            <Route path="users" element={<UserIndex />} />
+            <Route path="users/add" element={<AddNewUser />} />
+            <Route path="users/edit/:id" element={<EditUser />} />
+            <Route path="user-permissions/:id" element={<UserPermissions />} />
+            <Route path="assets" element={<AssetIndex />} />
+            <Route path="assets/add" element={<AddAsset />} />
+            <Route path="assets/edit/:id" element={<EditAsset />} />
+            <Route path="vehicles" element={<VehicleIndex />} />
+            <Route path="vehicles/add" element={<AddVehicle />} />
+            <Route path="vehicles/edit/:id" element={<EditVehicle />} />
+            <Route path="Manufacturers" element={<ManufacturersIndex />} />
+            <Route path="Manufacturers/add" element={<AddManufacturer />} />
+            <Route
+              path="Manufacturers/edit/:id"
+              element={<EditManufacturer />}
+            />
+            <Route path="conditions" element={<ConditionIndex />} />
+            <Route path="vendors" element={<VendorIndex />} />
+            <Route path="vendors/add" element={<AddVendor />} />
+            <Route path="vendors/edit/:id" element={<EditVendor />} />
+            <Route path="site-demands" element={<SiteDemandIndex />} />
+            <Route path="site-demands/add" element={<AddSiteDemand />} />
+            <Route path="site-demands/edit/:id" element={<EditSiteDemand />} />
+            <Route path="site-demands/show/:id" element={<ViewSiteDemand />} />
+            <Route path="market-purchases" element={<MarketPurchaseIndex />} />
+            <Route
+              path="market-purchases/create"
+              element={<AddMarketPurchase />}
+            />
+            <Route
+              path="market-purchases/:id/edit"
+              element={<EditMarketPurchase />}
+            />
+            <Route
+              path="market-purchases/:id/view"
+              element={<ViewMarketPurchase />}
+            />
+            <Route path="whts" element={<WhtIndex />} />
+            <Route path="wht/add" element={<AddWht />} />
+            <Route path="wht/edit/:id" element={<EditWht />} />
+            {/* Tax Payer Type routes */}
+            <Route path="tax-payer-types" element={<TaxPayerTypeIndex />} />
+            <Route path="tax-payer-types/add" element={<AddTaxPayerType />} />
+            <Route
+              path="tax-payer-types/edit/:id"
+              element={<EditTaxPayerType />}
+            />
+            <Route path="categorymenu" element={<CategoryMenu />} />
+            <Route path="banks" element={<BankIndex />} />
+            <Route path="purchase-orders" element={<PurchaseOrderIndex />} />
+            <Route path="purchase-orders/add" element={<AddPurchaseOrder />} />
+            <Route
+              path="purchase-orders/:id/edit"
+              element={<EditPurchaseOrder />}
+            />
+            <Route path="purchase-orders/:id" element={<ViewPurchaseOrder />} />
+            <Route path="site-purchases" element={<SitePurchaseIndex />} />
+            <Route path="site-purchase/create" element={<SitePurchaseAdd />} />
+            <Route path="uoms" element={<UomIndex />} />
+            <Route
+              path="market-purchase/show/:id"
+              element={<ViewMarketPurchase />}
+            />
+            <Route path="permissions" element={<PermissionsIndex />} />
+            <Route path="employees" element={<EmployeeIndex />} />
+            <Route path="site-demands/track/:id" element={<TrackDemand />} />
+            <Route path="untrack-items/show/:id" element={<ViewUntrackItem />} />
+            <Route path="inter-transfer" element={<InterTransferIndex />} />
+            <Route
+              path="purchase-order/show/:id"
+              element={<ShowPurchaseOrder />}
+            />
+            <Route path="" element={<Dashboard />} />
+          </Route>
 
           <Route path="/" element={<Login />} />
         </Routes>

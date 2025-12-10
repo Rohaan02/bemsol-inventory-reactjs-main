@@ -1,8 +1,6 @@
 // src/pages/Assets/AssetIndex.jsx
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/themes";
@@ -38,7 +36,6 @@ import {
 import Select from "react-select";
 
 const AssetIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [assets, setAssets] = useState([]);
   const [meta, setMeta] = useState({});
   const [loading, setLoading] = useState(true);
@@ -348,11 +345,7 @@ const AssetIndex = () => {
     pageSizeOptions[1];
 
   return (
-    <div className="flex h-full min-h-screen bg-white-500">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+    <div className="h-full">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
               <div>
@@ -687,8 +680,6 @@ const AssetIndex = () => {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
     </div>
   );
 };

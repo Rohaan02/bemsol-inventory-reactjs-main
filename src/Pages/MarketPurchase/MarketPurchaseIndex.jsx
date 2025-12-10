@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/themes";
@@ -73,7 +71,6 @@ import OrderedModel from "./OrderedModel";
 import GenerateOrderMPNModel from "./GenerateOrderMPNModel";
 
 const MarketPurchaseIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [demands, setDemands] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [meta, setMeta] = useState({});
@@ -1599,11 +1596,7 @@ const MarketPurchaseIndex = () => {
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-white-500">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 overflow-y-auto p-1 md:p-2">
+    <div className="h-full">
           <div className="w-full px-2 md:px-4">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
               <div>
@@ -2076,46 +2069,44 @@ const MarketPurchaseIndex = () => {
               </CardContent>
             </Card>
           </div>
-        </main>
 
-        {/* Purchase Modal */}
-        <ItemPurchaseModel
-          isOpen={showPurchaseModal}
-          onClose={() => setShowPurchaseModal(false)}
-          onSubmit={handlePurchaseSubmit}
-          selectedItems={getSelectedDemandItems()}
-          locations={locations}
-        />
-        <MarketPurchaseNoteModel
-          isOpen={showNoteModal}
-          onClose={() => setShowNoteModal(false)}
-          selectedItems={getSelectedDemandItems()}
-        />
-        <EstimatePriceModel
-          isOpen={showEstimatePriceModal}
-          onClose={() => setShowEstimatePriceModal(false)}
-          selectedItems={getSelectedDemandItems()}
-        />
-        <PurchaserModel
-          isOpen={showPurchaserModal}
-          onClose={() => setShowPurchaserModal(false)}
-          onSubmit={handlePurchaseSubmit}
-          selectedItems={getSelectedDemandItems()}
-        />
-        <OrderedModel
-          isOpen={showOrderedModal}
-          onClose={() => setShowOrderedModal(false)}
-          onSubmit={handleOrderSubmit}
-          selectedItems={getSelectedDemandItems()}
-        />
+      {/* Purchase Modal */}
+      <ItemPurchaseModel
+        isOpen={showPurchaseModal}
+        onClose={() => setShowPurchaseModal(false)}
+        onSubmit={handlePurchaseSubmit}
+        selectedItems={getSelectedDemandItems()}
+        locations={locations}
+      />
+      <MarketPurchaseNoteModel
+        isOpen={showNoteModal}
+        onClose={() => setShowNoteModal(false)}
+        selectedItems={getSelectedDemandItems()}
+      />
+      <EstimatePriceModel
+        isOpen={showEstimatePriceModal}
+        onClose={() => setShowEstimatePriceModal(false)}
+        selectedItems={getSelectedDemandItems()}
+      />
+      <PurchaserModel
+        isOpen={showPurchaserModal}
+        onClose={() => setShowPurchaserModal(false)}
+        onSubmit={handlePurchaseSubmit}
+        selectedItems={getSelectedDemandItems()}
+      />
+      <OrderedModel
+        isOpen={showOrderedModal}
+        onClose={() => setShowOrderedModal(false)}
+        onSubmit={handleOrderSubmit}
+        selectedItems={getSelectedDemandItems()}
+      />
 
-        <GenerateOrderMPNModel
-          isOpen={showGenerateOrderMPNModal}
-          onClose={() => setShowGenerateOrderMPNModal(false)}
-          onSubmit={handleOrderSubmit} // You might want to create a separate handler for this
-          selectedItems={getSelectedDemandItems()}
-        />
-      </div>
+      <GenerateOrderMPNModel
+        isOpen={showGenerateOrderMPNModal}
+        onClose={() => setShowGenerateOrderMPNModal(false)}
+        onSubmit={handleOrderSubmit} // You might want to create a separate handler for this
+        selectedItems={getSelectedDemandItems()}
+      />
     </div>
   );
 };

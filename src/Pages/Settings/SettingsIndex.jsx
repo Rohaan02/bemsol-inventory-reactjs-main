@@ -1,7 +1,5 @@
 // src/pages/Settings/SettingsIndex.jsx
 import { useEffect, useState, useCallback } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -100,7 +98,6 @@ const SettingField = ({ setting, index, logoPreview, onChange, onLogoChange }) =
 };
 
 const SettingsIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -201,26 +198,14 @@ const SettingsIndex = () => {
   // Render loading state
   if (loading) {
     return (
-       <div className="flex h-full min-h-screen bg-gray-100">
-        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-          <main className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
-            <Loader size="lg" message="Loading settings..." />
-          </main>
-        </div>
+      <div className="h-full flex items-center justify-center">
+        <Loader size="lg" message="Loading settings..." />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 overflow-y-auto p-6">
+    <div className="h-full">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 text-gray-900">
               Application Settings
@@ -269,8 +254,6 @@ const SettingsIndex = () => {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
     </div>
   );
 };

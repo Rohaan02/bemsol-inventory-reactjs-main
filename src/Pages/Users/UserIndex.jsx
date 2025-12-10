@@ -88,11 +88,7 @@ export default function UserIndex() {
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex-1">
-        <Header />
-        <div className="p-4 bg-white">
+    <div className="h-full">
           <Card className="bg-white">
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
@@ -277,8 +273,6 @@ export default function UserIndex() {
               )}
             </CardContent>
           </Card>
-        </div>
-      </div>
     </div>
   );
 }

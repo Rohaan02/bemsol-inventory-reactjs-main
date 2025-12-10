@@ -1,8 +1,6 @@
 // src/pages/WHT/WhtIndex.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify";
@@ -22,7 +20,6 @@ import {
 import whtAPI from "../../lib/whtaxesApi";
 
 const WhtIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [whts, setWhts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,13 +88,7 @@ const WhtIndex = () => {
   );
 
   return (
-    <div className="flex h-full min-h-screen bg-white-50">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+    <div className="h-full">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Withholding Taxes</h1>
             <Button
@@ -214,8 +205,6 @@ const WhtIndex = () => {
               )}
             </CardContent>
           </Card>
-        </main>
-      </div>
     </div>
   );
 };

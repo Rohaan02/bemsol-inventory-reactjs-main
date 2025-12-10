@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "../../components/layout/Sidebar";
-import { Header } from "../../components/layout/Header";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Checkbox } from "@radix-ui/themes";
@@ -62,7 +60,6 @@ import {
 import Select from "react-select";
 
 const InterTransferIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [data, setData] = useState([]);
   const [meta, setMeta] = useState({});
   const [loading, setLoading] = useState(true);
@@ -788,11 +785,7 @@ const InterTransferIndex = () => {
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-white-500">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 overflow-y-auto p-1 md:p-2">
+    <div className="h-full">
           <div className="w-full px-2 md:px-4">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
               <div>
@@ -1210,8 +1203,6 @@ const InterTransferIndex = () => {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
     </div>
   );
 };

@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify";
@@ -48,7 +46,6 @@ import {
 import vendorAPI from "@/lib/vendorApi";
 
 const VendorIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [vendors, setVendors] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -447,13 +444,7 @@ const VendorIndex = () => {
   );
 
   return (
-    <div className="flex h-full min-h-screen bg-white-50">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
+    <div className="h-full">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
             <div className="flex gap-2">
@@ -772,8 +763,6 @@ const VendorIndex = () => {
               )}
             </CardContent>
           </Card>
-        </main>
-      </div>
 
       {/* Filter Sidebar */}
       <div

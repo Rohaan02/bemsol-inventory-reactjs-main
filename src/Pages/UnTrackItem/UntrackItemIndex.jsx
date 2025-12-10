@@ -1,8 +1,6 @@
 // src/pages/UntrackItem/UntrackItemIndex.jsx
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/themes";
@@ -53,7 +51,6 @@ import untrackItemAPI from "@/lib/untrackItemAPI";
 import baseUrl from "../../lib/BaseUrl";
 
 const UntrackItemIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -478,13 +475,7 @@ const UntrackItemIndex = () => {
   );
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
+    <div className="h-full">
           {/* Page Header - Always full width */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
@@ -893,8 +884,6 @@ const UntrackItemIndex = () => {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
 
       {/* Filter Sidebar - Starts from table header level */}
       <div

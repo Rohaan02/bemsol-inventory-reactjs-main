@@ -1,7 +1,5 @@
 // src/pages/Category/CategoryIndex.jsx
 import { useEffect, useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify";
@@ -40,7 +38,6 @@ import {
 import Swal from "sweetalert2";
 
 const CategoryIndex = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -393,15 +390,7 @@ const CategoryIndex = () => {
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-white-50">
-      {/* Sidebar */}
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+    <div className="h-full">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
             <Button
@@ -688,8 +677,6 @@ const CategoryIndex = () => {
               )}
             </CardContent>
           </Card>
-        </main>
-      </div>
 
       {/* Add/Edit Category Modal */}
       <Dialog open={open} onOpenChange={setOpen} size="md">

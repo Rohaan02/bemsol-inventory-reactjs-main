@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import ItemtypeAPI from "../../lib/ItemtypeAPI";
 import { toast } from "react-toastify";
 import {
@@ -28,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 const ItemType = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -113,13 +110,7 @@ const ItemType = () => {
   const totalPages = Math.ceil(filtered.length / perPage);
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <div className="flex-1 flex flex-col">
-        <Header setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 p-6">
+    <div className="h-full">
           <div className="bg-white shadow-md rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Item Types</h2>
@@ -223,8 +214,6 @@ const ItemType = () => {
               </div>
             </div>
           </div>
-        </main>
-      </div>
 
       {/* Modal */}
       <Dialog open={open} onOpenChange={setOpen} size="sm">

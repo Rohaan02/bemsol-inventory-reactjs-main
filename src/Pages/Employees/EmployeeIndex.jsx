@@ -1,10 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 import employeesApi from "../../lib/employeesApi";
 
 export default function EmployeeIndex() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -103,13 +100,7 @@ export default function EmployeeIndex() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+    <div className="h-full">
           <div className="max-w-7xl mx-auto">
             
             {/* Header and Refresh Button */}
@@ -381,8 +372,6 @@ export default function EmployeeIndex() {
               </>
             )}
           </div>
-        </main>
-      </div>
     </div>
   );
 }

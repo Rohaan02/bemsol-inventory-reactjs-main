@@ -1,0 +1,844 @@
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "react-toastify";
+import siteDemandAPI from "../../lib/siteDemandApi";
+import inventoryItemAPI from "../../lib/InventoryItemApi";
+import locationAPI from "../../lib/locationAPI";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  Upload,
+  X,
+  Image as ImageIcon,
+  AlertCircle,
+  Warehouse,
+  AlertTriangle,
+} from "lucide-react";
+import Select from "react-select";
+
+const AddSiteDemand = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [stockInfo, setStockInfo] = useState(null);
+  const [existingDemand, setExistingDemand] = useState(null);
+  const fileInputRef = useRef(null);
+  const today = new Date().toISOString().split("T")[0];
+
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split("T")[0],
+    required_date: today,
+    item_name: "",
+    quantity: "",
+    inventory_item_id: "",
+    location_id: "",
+    priority: "Medium",
+    fulfillment_type: "site_purchase",
+    remarks: "",
+    image: null,
+    existing_demand_no: "",
+    previous_qty_requested: "",
+    purpose: "",
+  });
+
+  const navigate = useNavigate();
+
+  const isImageRequired =
+    !formData.inventory_item_id && formData.item_name.trim() !== "";
+
+  const fetchData = async () => {
+    try {
+      const [items, locationsData] = await Promise.all([
+        inventoryItemAPI.getInvenotryAndNonInventoryItems(),
+        locationAPI.getAuthLocations(),
+      ]);
+
+      console.log("Fetched items:", items); // Debug log
+
+      // Convert backend data to dropdown-compatible format
+      const formattedItems = items.map((item) => ({
+        value: item.id, // Use just the ID as value
+        label: `${item.item_code} - ${item.item_name}`,
+        data: item, // Store the entire item object in data
+        source: item.source,
+      }));
+
+      setInventoryItems(formattedItems);
+      setLocations(locationsData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      toast.error("Failed to load data");
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Fetch stock info
+  useEffect(() => {
+    const checkStockInfo = async () => {
+      if (formData.inventory_item_id && formData.location_id) {
+        try {
+          const stockData = await siteDemandAPI.getStockInfo(
+            formData.inventory_item_id,
+            formData.location_id
+          );
+          setStockInfo(stockData);
+        } catch (error) {
+          console.error("Failed to fetch stock info:", error);
+          setStockInfo(null);
+        }
+      } else {
+        setStockInfo(null);
+      }
+    };
+
+    checkStockInfo();
+  }, [formData.inventory_item_id, formData.location_id]);
+
+  // Check for existing demands
+  useEffect(() => {
+    const checkExistingDemand = async () => {
+      if (formData.inventory_item_id && formData.location_id) {
+        try {
+          const existingDemandData = await siteDemandAPI.checkExistingDemand(
+            formData.inventory_item_id,
+            formData.location_id
+          );
+
+          console.log("Existing Demand API Response:", existingDemandData);
+
+          setExistingDemand(existingDemandData);
+
+          if (
+            existingDemandData?.has_pending_demand &&
+            existingDemandData.existing_demand
+          ) {
+            setFormData((prev) => ({
+              ...prev,
+              existing_demand_no:
+                existingDemandData.existing_demand.demand_no || "",
+              previous_qty_requested:
+                existingDemandData.existing_demand.quantity || "",
+            }));
+          } else {
+            setFormData((prev) => ({
+              ...prev,
+              existing_demand_no: "",
+              previous_qty_requested: "",
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to check existing demands:", error);
+          setExistingDemand(null);
+          setFormData((prev) => ({
+            ...prev,
+            existing_demand_no: "",
+            previous_qty_requested: "",
+          }));
+        }
+      } else {
+        setExistingDemand(null);
+        setFormData((prev) => ({
+          ...prev,
+          existing_demand_no: "",
+          previous_qty_requested: "",
+        }));
+      }
+    };
+
+    checkExistingDemand();
+  }, [formData.inventory_item_id, formData.location_id]);
+
+  const priorityOptions = [
+    { value: "Low", label: "Low" },
+    { value: "Medium", label: "Medium" },
+    { value: "High", label: "High" },
+    { value: "Urgent", label: "Urgent" },
+  ];
+
+  const fulfillmentTypeOptions = [
+    { value: "site_purchase", label: "Site Purchase" },
+    { value: "inter_store_transfer", label: "Inter Store Transfer" },
+    { value: "market_purchase", label: "Market Purchase" },
+    { value: "purchase_order", label: "Purchase Order" },
+  ];
+
+  // Custom option component for inventory items with images
+  const formatOptionLabel = ({ label, data }) => (
+    <div className="flex items-center gap-3">
+      {data?.image_url ? (
+        <img
+          src={data.image_url}
+          alt={data.item_name}
+          className="w-6 h-6 object-cover rounded border border-gray-200"
+          onError={(e) => {
+            e.target.style.display = "none";
+            e.target.nextSibling.style.display = "flex";
+          }}
+        />
+      ) : null}
+      <div
+        className={`w-6 h-6 bg-gray-100 rounded border border-gray-200 flex items-center justify-center ${
+          data?.image_url ? "hidden" : "flex"
+        }`}
+      >
+        <ImageIcon className="w-3 h-3 text-gray-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-gray-900 truncate">
+          {data?.item_name || label}
+        </div>
+        <div className="text-xs text-gray-500 truncate">
+          {data?.item_code || ""}
+        </div>
+      </div>
+    </div>
+  );
+
+  const customStyles = {
+    control: (base, state) => ({
+      ...base,
+      height: "40px",
+      minHeight: "40px",
+      fontSize: "14px",
+      borderColor: state.isFocused ? "#16a34a" : "#d1d5db",
+      boxShadow: state.isFocused ? "0 0 0 1px #16a34a" : "none",
+      "&:hover": {
+        borderColor: state.isFocused ? "#16a34a" : "#9ca3af",
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      fontSize: "14px",
+      zIndex: 50,
+    }),
+  };
+
+  const locationOptions = locations.map((location) => ({
+    value: location.id,
+    label: location.name,
+    data: location,
+  }));
+
+  const handleInputChange = (eOrName, value) => {
+    if (typeof eOrName === "string") {
+      setFormData((prev) => ({ ...prev, [eOrName]: value }));
+    } else {
+      const { name, value } = eOrName.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSelectChange = (name, selectedOption) => {
+    if (name === "inventory_item_id") {
+      const item = selectedOption ? selectedOption.data : null;
+      setSelectedItem(item);
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: selectedOption ? selectedOption.value : "",
+        item_name: selectedOption ? selectedOption.data.item_name : "",
+      }));
+    } else if (name === "location_id") {
+      const location = selectedOption ? selectedOption.data : null;
+      setSelectedLocation(location);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: selectedOption ? selectedOption.value : "",
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: selectedOption ? selectedOption.value : "",
+      }));
+    }
+  };
+
+  const handleQuantityChange = (e) => {
+    const { value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      quantity: value,
+    }));
+  };
+
+  const validateExistingDemands = () => {
+    if (existingDemand?.has_pending_demand) {
+      toast.error(
+        `This item already has a pending demand at this location (Demand #: ${existingDemand.demand_no})`
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const validateStockAvailability = () => {
+    if (formData.fulfillment_type === "inter_store_transfer" && stockInfo) {
+      const requestedQuantity = parseInt(formData.quantity) || 0;
+      if (requestedQuantity > stockInfo.available_stock) {
+        toast.error(
+          `Insufficient stock. Available: ${stockInfo.available_stock}, Requested: ${requestedQuantity}`
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image size should be less than 2MB");
+        return;
+      }
+
+      setImageFile(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (isImageRequired && !imageFile) {
+      toast.error("Image is required when entering item name manually");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const submitData = new FormData();
+
+      // Append all form data
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== null && formData[key] !== "") {
+          submitData.append(key, formData[key]);
+        }
+      });
+
+      // Append image file if exists
+      if (imageFile) {
+        submitData.append("image", imageFile);
+      }
+
+      const response = await siteDemandAPI.create(submitData);
+
+      if (response.success) {
+        toast.success("Site demand created successfully");
+        navigate("/site-demands");
+      } else {
+        toast.error(response.message || "Failed to create site demand");
+      }
+    } catch (error) {
+      console.error("Error creating site demand:", error);
+
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        Object.keys(errors).forEach((key) => {
+          toast.error(`${key}: ${errors[key][0]}`);
+        });
+      } else {
+        toast.error(
+          error.response?.data?.message || "Failed to create site demand"
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex h-full min-h-screen bg-gray-50">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/site-demands")}
+                className="flex items-center gap-2 bg-white hover:bg-gray-50 text-black"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  Add Site Demand
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Create a new material demand request
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-sm border border-gray-200 bg-white">
+              <form onSubmit={handleSubmit}>
+                <CardHeader className="border-b border-gray-100">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Demand Information
+                  </CardTitle>
+                </CardHeader>
+
+                <CardContent className="p-6 space-y-6">
+                  {/* Stock Information */}
+                  {stockInfo && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                      <div className="flex items-center gap-3">
+                        <Warehouse className="w-5 h-5 text-blue-500" />
+                        <div>
+                          <h4 className="font-medium text-blue-800">
+                            Stock Information
+                          </h4>
+                          <p className="text-blue-700 text-sm">
+                            Available Stock:{" "}
+                            <strong>{stockInfo.available_stock}</strong> units
+                            {formData.fulfillment_type ===
+                              "inter_store_transfer" && (
+                              <span
+                                className={`ml-2 ${
+                                  parseInt(formData.quantity) >
+                                  stockInfo.available_stock
+                                    ? "text-red-600 font-semibold"
+                                    : "text-green-600"
+                                }`}
+                              >
+                                (Requested: {formData.quantity || 0})
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <Label
+                        htmlFor="required_date"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Required Date *
+                      </Label>
+                      <Input
+                        type="date"
+                        id="required_date"
+                        name="required_date"
+                        value={formData.required_date}
+                        onChange={handleInputChange}
+                        required
+                        min={formData.date}
+                        className="mt-1 focus:ring-green-500 focus:border-green-500"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label
+                        htmlFor="location_id"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Location *
+                      </Label>
+                      <Select
+                        options={locationOptions}
+                        value={
+                          locationOptions.find(
+                            (option) => option.value === formData.location_id
+                          ) || null
+                        }
+                        onChange={(selectedOption) =>
+                          handleSelectChange("location_id", selectedOption)
+                        }
+                        placeholder="Select location..."
+                        styles={customStyles}
+                        isClearable
+                        isSearchable
+                        required
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label
+                        htmlFor="demand_purpose"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Demand Purpose
+                      </Label>
+                      <Input
+                        type="text"
+                        id="purpose"
+                        name="purpose"
+                        value={formData.purpose}
+                        onChange={handleInputChange}
+                        placeholder="Enter purpose of this demand"
+                        className="mt-1 focus:ring-green-500 focus:border-green-500"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label
+                        htmlFor="inventory_item_id"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Select Inventory Item
+                      </Label>
+                      <Select
+                        options={inventoryItems}
+                        value={
+                          inventoryItems.find(
+                            (option) =>
+                              option.value === formData.inventory_item_id
+                          ) || null
+                        }
+                        onChange={(selectedOption) =>
+                          handleSelectChange(
+                            "inventory_item_id",
+                            selectedOption
+                          )
+                        }
+                        placeholder="Search and select inventory item..."
+                        styles={customStyles}
+                        formatOptionLabel={formatOptionLabel}
+                        isClearable
+                        isSearchable
+                      />
+
+                      {stockInfo &&
+                        formData.inventory_item_id &&
+                        formData.location_id && (
+                          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                            <div className="flex items-center gap-2">
+                              <Warehouse className="w-4 h-4 text-green-600" />
+                              <span className="text-sm font-medium text-green-800">
+                                Stock Information
+                              </span>
+                            </div>
+                            <p className="text-sm text-green-700 mt-1">
+                              Available Stock:{" "}
+                              <strong>{stockInfo.available_stock}</strong> units
+                              {formData.fulfillment_type ===
+                                "inter_store_transfer" && (
+                                <span
+                                  className={`ml-2 ${
+                                    parseInt(formData.quantity) >
+                                    stockInfo.available_stock
+                                      ? "text-red-600 font-semibold"
+                                      : "text-green-600"
+                                  }`}
+                                >
+                                  (Requested: {formData.quantity || 0})
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        )}
+                    </div>
+
+                    {/* Existing Demand Alert */}
+                    {existingDemand?.has_pending_demand &&
+                      formData.inventory_item_id && (
+                        <div className="md:col-span-2 p-4 bg-yellow-50 border border-yellow-300 rounded-md">
+                          <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                            <div className="flex-1">
+                              <h4 className="font-medium text-yellow-800">
+                                Item Already in Demand Process
+                              </h4>
+                              <p className="text-yellow-700 text-sm mt-1">
+                                This item already has a pending demand at this
+                                location. Please check existing demand #
+                                {existingDemand.demand_no}.
+                              </p>
+                              <p className="text-yellow-600 text-sm mt-1">
+                                Existing Qty: #{formData.quantity || 0}.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label
+                          htmlFor="item_name"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          Item Name *
+                        </Label>
+                        <Input
+                          type="text"
+                          id="item_name"
+                          name="item_name"
+                          value={formData.item_name}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="Enter item name"
+                          readOnly={!!formData.inventory_item_id}
+                          className={`mt-1 focus:ring-green-500 focus:border-green-500 ${
+                            formData.inventory_item_id ? "bg-gray-50" : ""
+                          }`}
+                        />
+                        {!formData.inventory_item_id &&
+                          formData.item_name.trim() !== "" && (
+                            <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Image upload required for manual item entry
+                            </p>
+                          )}
+                      </div>
+
+                      <div>
+                        <Label
+                          htmlFor="quantity"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          Quantity *
+                        </Label>
+                        <Input
+                          type="number"
+                          id="quantity"
+                          name="quantity"
+                          value={formData.quantity}
+                          onChange={handleQuantityChange}
+                          required
+                          min="1"
+                          placeholder="Enter quantity"
+                          className="mt-1 focus:ring-green-500 focus:border-green-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label
+                          htmlFor="priority"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          Priority *
+                        </Label>
+                        <Select
+                          options={priorityOptions}
+                          value={
+                            priorityOptions.find(
+                              (option) => option.value === formData.priority
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            handleSelectChange("priority", selectedOption)
+                          }
+                          styles={customStyles}
+                          isSearchable={false}
+                        />
+                      </div>
+
+                      <div>
+                        <Label
+                          htmlFor="fulfillment_type"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          Fulfillment Type *
+                        </Label>
+                        <Select
+                          options={fulfillmentTypeOptions}
+                          value={
+                            fulfillmentTypeOptions.find(
+                              (option) =>
+                                option.value === formData.fulfillment_type
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            handleSelectChange(
+                              "fulfillment_type",
+                              selectedOption
+                            )
+                          }
+                          styles={customStyles}
+                          isSearchable={false}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label className="text-sm font-medium text-gray-700">
+                        Item Image
+                      </Label>
+                      {isImageRequired && (
+                        <span className="text-red-500 text-xs font-medium bg-red-50 px-2 py-1 rounded">
+                          Required *
+                        </span>
+                      )}
+                    </div>
+
+                    {isImageRequired && !imagePreview && (
+                      <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                        <p className="text-amber-800 text-sm flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Image upload is required when entering item name
+                          manually
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-1">
+                      {!imagePreview ? (
+                        <div
+                          className={`flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+                            isImageRequired && !imageFile
+                              ? "border-amber-300 bg-amber-50"
+                              : "border-gray-300"
+                          }`}
+                        >
+                          <div className="space-y-1 text-center">
+                            <ImageIcon
+                              className={`mx-auto h-12 w-12 ${
+                                isImageRequired && !imageFile
+                                  ? "text-amber-400"
+                                  : "text-gray-400"
+                              }`}
+                            />
+                            <div className="flex text-sm text-gray-600 justify-center">
+                              <label
+                                htmlFor="image-upload"
+                                className="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500"
+                              >
+                                <span>Upload an image</span>
+                                <input
+                                  id="image-upload"
+                                  name="image"
+                                  type="file"
+                                  className="sr-only"
+                                  accept="image/*"
+                                  onChange={handleImageChange}
+                                  ref={fileInputRef}
+                                  required={isImageRequired}
+                                />
+                              </label>
+                              <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG, GIF up to 2MB
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="h-48 w-full object-cover rounded-lg border border-gray-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full hover:bg-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Remarks */}
+                  <div>
+                    <Label
+                      htmlFor="remarks"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Remarks
+                    </Label>
+                    <Textarea
+                      id="remarks"
+                      name="remarks"
+                      value={formData.remarks}
+                      onChange={handleInputChange}
+                      placeholder="Enter any additional remarks or notes"
+                      rows={4}
+                      className="mt-1 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                </CardContent>
+
+                <CardFooter className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                  <Button
+                    className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white"
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/site-demands")}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {loading ? "Creating..." : "Create Demand"}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default AddSiteDemand;

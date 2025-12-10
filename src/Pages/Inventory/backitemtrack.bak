@@ -1,0 +1,331 @@
+import { useEffect, useState } from "react";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tab } from "@headlessui/react";
+import inventoryItemAPI from "@/lib/InventoryItemApi";
+import { toast } from "react-toastify";
+import { Link, useParams } from "react-router-dom";
+import LocationsCard from "./LocationCard";
+import FloatingSidebar from "./FloatingSidebar";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, MoreHorizontal, Edit, Plus, MessageSquare, FileText } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import CommentsSection from "@/components/Comments/CommentsSection";
+import DocumentsSection from "@/components/Documents/DocumentsSection";
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+
+const ItemTracking = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [item, setItem] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const activityData = [
+    {
+      id: 1,
+      user: "John Doe",
+      avatar: "https://i.pravatar.cc/40?img=1",
+      action: "Added",
+      remarks: "New stock received",
+      datetime: "2025-09-26 10:30 AM",
+    },
+    {
+      id: 2,
+      user: "Jane Smith",
+      avatar: "https://i.pravatar.cc/40?img=2",
+      action: "Moved",
+      remarks: "Transferred to Warehouse B",
+      datetime: "2025-09-25 03:15 PM",
+    },
+    {
+      id: 3,
+      user: "Mark Lee",
+      avatar: "https://i.pravatar.cc/40?img=3",
+      action: "Removed",
+      remarks: "Damaged item removed",
+      datetime: "2025-09-24 09:45 AM",
+    },
+  ];
+
+  useEffect(() => {
+  const fetchItem = async () => {
+    try {
+      const response = await inventoryItemAPI.track(id);
+      console.log('Full track response:', response);
+      
+      if (response.success) {
+        setItem(response.data);
+      } else {
+        toast.error(response.message || "Item not found");
+        // Optionally redirect to items list or handle differently
+        navigate('/inventory'); // redirect to inventory list
+      }
+    } catch (error) {
+      console.error("Error fetching item:", error);
+      if (error.response?.status === 404) {
+        toast.error("Item not found");
+        navigate('/inventory'); // redirect to inventory list
+      } else {
+        toast.error("Failed to fetch item details");
+      }
+    }
+  };
+  
+  if (id) {
+    fetchItem();
+  }
+}, [id, navigate]);
+
+  const handleEdit = () => {
+    // Navigate to edit page
+    window.location.href = `/inventory/edit/${id}`;
+  };
+
+  if (!item)
+    return (
+      <div className="flex-1 flex justify-center items-center text-black">
+        Loading...
+      </div>
+    );
+
+  return (
+    <div className="flex h-full min-h-screen bg-gray-100">
+      <Sidebar sidebarOpen={menuOpen} setSidebarOpen={setMenuOpen} />
+
+      <div className="flex flex-col flex-1 overflow-hidden relative">
+        <Header sidebarOpen={menuOpen} setSidebarOpen={setMenuOpen} />
+
+        <main className="flex-1 overflow-y-hidden p-4 md:p-6 space-y-6">
+          {/* Sticky Item Info */}
+          <div className="sticky top-0 z-10 bg-gray-100 pb-2">
+            <div className="flex items-center gap-2 mb-4 text-gray-700">
+              <Link to="/inventory" className="flex items-center gap-1 px-2 py-1">
+                <ArrowLeft size={16} />
+                <span className="font-semibold">Parts</span>
+              </Link>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow flex flex-row items-start justify-between gap-4">
+              {/* Left Side: Image/Icon and Text Details */}
+              <div className="flex items-start gap-4 flex-1">
+                {/* Item Image or Placeholder */}
+                <div className="bg-gray-300 rounded-lg w-20 h-20 flex items-center justify-center text-xl font-bold text-gray-600">
+                  {item.image ? (
+                    <img 
+                      src={`/storage/${item.image}`} 
+                      alt={item.item_name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  ) : (
+                    item.item_code?.substring(0, 3) || "IMG"
+                  )}
+                </div>
+                
+                {/* Item Details */}
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-2xl font-bold">{item.item_code}</h2>
+                  <p className="text-gray-600">{item.item_name}</p>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-800">Category</span>
+                      <span>{item.category?.category_name || 'N/A'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-800">Manufacturer</span>
+                      <span>{item.manufacturer?.name || 'N/A'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-800">Quantity</span>
+                      <span>{item.quantity || 0}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-800">Unit Cost</span>
+                      <span>${item.unit_cost || '0.00'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right Side: Action Buttons */}
+              <div className="flex items-center gap-2">
+                {/* Dropdown Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-gray-600">
+                      <MoreHorizontal size={18} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem className="flex items-center gap-2 text-black cursor-pointer">
+                      Update Qty
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2 text-black cursor-pointer">
+                      Archive
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Edit Button */}
+                <Button
+                  onClick={handleEdit}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1 text-black bg-white hover:bg-gray-100 px-2 py-1"
+                >
+                  <Edit size={16} />
+                  <span>Edit</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Section */}
+          <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
+            <Tab.List className="flex space-x-2 border-b border-gray-300 mb-4 sticky top-[130px] bg-gray-100 z-10">
+              {['Overview', 'Inventory Activity', 'Comments', 'Documents'].map((tab) => (
+                <Tab
+                  key={tab}
+                  className={({ selected }) =>
+                    classNames(
+                      "px-4 py-2 font-medium text-sm rounded-t-lg",
+                      selected
+                        ? "bg-white border-t border-l border-r border-gray-300 text-green-600"
+                        : "text-black hover:text-green-700"
+                    )
+                  }
+                >
+                  {tab}
+                </Tab>
+              ))}
+            </Tab.List>
+
+            <Tab.Panels className="h-[calc(100vh-250px)] overflow-y-auto pr-2">
+              {/* Overview Tab */}
+              <Tab.Panel className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left Column */}
+                  <div className="lg:col-span-6 space-y-6">
+                    <Card className="bg-white">
+                      <CardHeader>
+                        <CardTitle className="text-green-600">Item Full Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-black">
+                        <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+                          <tbody>
+                            <tr className="bg-gray-50"><td className="px-4 py-2 border font-semibold">Part Number</td><td className="px-4 py-2 border">{item.item_code}</td></tr>
+                            <tr><td className="px-4 py-2 border font-semibold">Category</td><td className="px-4 py-2 border">{item.category?.category_name || 'N/A'}</td></tr>
+                            <tr className="bg-gray-50"><td className="px-4 py-2 border font-semibold">Manufacturer</td><td className="px-4 py-2 border">{item.manufacturer?.name || 'N/A'}</td></tr>
+                            <tr><td className="px-4 py-2 border font-semibold">Location</td><td className="px-4 py-2 border">{item.location?.name || 'N/A'}</td></tr>
+                            <tr className="bg-gray-50"><td className="px-4 py-2 border font-semibold">Vendor</td><td className="px-4 py-2 border">{item.vendor?.company_name || 'N/A'}</td></tr>
+                            <tr><td className="px-4 py-2 border font-semibold">Reorder Point</td><td className="px-4 py-2 border">{item.reorder_point}</td></tr>
+                            <tr className="bg-gray-50"><td className="px-4 py-2 border font-semibold">Quantity</td><td className="px-4 py-2 border">{item.quantity}</td></tr>
+                            <tr><td className="px-4 py-2 border font-semibold">Returnable</td><td className="px-4 py-2 border">{item.is_returnable ? "Yes" : "No"}</td></tr>
+                          </tbody>
+                        </table>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-white shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="text-green-600">Inventory Remarks</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-black">
+                        {activityData.map((act) => (
+                          <div key={act.id} className="flex justify-between items-center border-b py-2">
+                            <div className="flex items-center gap-2">
+                              <img src={act.avatar} alt={act.user} className="w-8 h-8 rounded-full" />
+                              <div>
+                                <p className="font-semibold">{act.user}</p>
+                                <p className="text-black">{act.remarks}</p>
+                              </div>
+                            </div>
+                            <p className="text-black text-sm">{act.datetime}</p>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Right Column - Location Card */}
+                  <div className="lg:col-span-6">
+                    <div className="relative">
+                      <Card className="bg-white">
+                        <CardHeader>
+                          <CardTitle className="text-green-600">Location Analytics</CardTitle>
+                        </CardHeader>
+                        <LocationsCard textColor="black" headingColor="green-600" />
+                      </Card>
+                      
+                      {/* Floating Sidebar toggle button */}
+                      <div className="absolute right-0 top-4 z-50">
+                        <FloatingSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Tab.Panel>
+
+              {/* Inventory Activity Tab */}
+              <Tab.Panel>
+                <Card className="bg-white">
+                  <CardHeader>
+                    <CardTitle className="text-green-600">Inventory Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-black">
+                    <table className="w-full text-left border border-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 border">User</th>
+                          <th className="px-4 py-2 border">Action</th>
+                          <th className="px-4 py-2 border">Remarks</th>
+                          <th className="px-4 py-2 border">Date & Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activityData.map((act) => (
+                          <tr key={act.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 border flex items-center gap-2">
+                              <img src={act.avatar} alt={act.user} className="w-6 h-6 rounded-full" />
+                              {act.user}
+                            </td>
+                            <td className="px-4 py-2 border">{act.action}</td>
+                            <td className="px-4 py-2 border">{act.remarks}</td>
+                            <td className="px-4 py-2 border">{act.datetime}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
+              </Tab.Panel>
+
+              {/* Comments Tab */}
+              <Tab.Panel>
+                <CommentsSection itemId={id} />
+              </Tab.Panel>
+
+              {/* Documents Tab */}
+              <Tab.Panel>
+                <DocumentsSection itemId={id} />
+              </Tab.Panel>
+            </Tab.Panels>
+          </Tab.Group>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default ItemTracking;

@@ -53,6 +53,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         "/gate-pass",
         "/gate-out",
         "/no-gate-in",
+        "/gate-in",
       ],
       settings: [
         "/app-settings",
@@ -605,6 +606,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         "/gate-pass",
                         "/gate-out",
                         "/no-gate-in",
+                        "/gate-in",
                       ])
                         ? "text-white"
                         : "text-green-100 hover:bg-green-700 hover:text-white"
@@ -624,6 +626,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                       "/gate-pass",
                       "/gate-out",
                       "/no-gate-in",
+                      "/gate-in",
                     ]) && (
                       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
                     )}
@@ -852,6 +855,22 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
                           )}
                           Gate In / Out
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/gate-in"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/gate-in")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/gate-in") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Gate In
                         </Link>
                       </li>
                     </ul>

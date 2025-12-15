@@ -55,9 +55,8 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         "/no-gate-in",
         "/gate-in",
         "/gate-management",
-        "/gate-out-approval",
-        "/gate-out-request"
       ],
+      gateManagement: ["/gate-out-approval", "/gate-out-request"],
       settings: [
         "/app-settings",
         "/category",
@@ -611,8 +610,6 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         "/no-gate-in",
                         "/gate-in",
                         "/gate-management",
-                        "/gate-out-approval",
-                        "/gate-out-request"
                       ])
                         ? "text-white"
                         : "text-green-100 hover:bg-green-700 hover:text-white"
@@ -634,8 +631,6 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                       "/no-gate-in",
                       "/gate-in",
                       "/gate-management",
-                      "/gate-out-approval",
-                      "/gate-out-request"
                     ]) && (
                       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
                     )}
@@ -898,6 +893,64 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                           Gate Management
                         </Link>
                       </li>
+                    </ul>
+                  )}
+                </li>
+              )}
+              {/* Gate Management Dropdown */}
+              {hasPermission("view_item") && (
+                <li>
+                  <button
+                    className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors relative ${
+                      isMenuActive(["/gate-out-request", "/gate-out-approval"])
+                        ? "text-white"
+                        : "text-green-100 hover:bg-green-700 hover:text-white"
+                    }`}
+                    onClick={() => toggleMenu("gateManagement")}
+                  >
+                    {isMenuActive([
+                      "/gate-out-request",
+                      "/gate-out-approval",
+                    ]) && (
+                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
+                    )}
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                        />
+                      </svg>
+                      <span>Gate Management</span>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        openMenu === "gateManagement"
+                          ? "transform rotate-180"
+                          : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {openMenu === "gateManagement" && (
+                    <ul className="pl-9 mt-1 space-y-1">
                       <li>
                         <Link
                           to="/gate-out-approval"
@@ -934,7 +987,6 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   )}
                 </li>
               )}
-
               {/* Settings Dropdown */}
               <li>
                 <button

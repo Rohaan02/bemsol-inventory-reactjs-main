@@ -85,6 +85,7 @@ import GateOutward from "./components/Pages/GateProcessManagement/GateOutward";
 import GateOutRequest from "./components/Pages/GateProcessManagement/GateOutRequest";
 import NoVBRGateIn from "./components/Pages/GateProcessManagement/NoVBRGateIn";
 import VBRGateIn from "./components/Pages/GateProcessManagement/VBRGateIn";
+import GateManagementList from "./components/Pages/GateProcessManagement/GateManagementList";
 
 function App() {
   useIdleLogout();
@@ -130,6 +131,7 @@ function App() {
             <Route path="gate-out" element={<GateOutRequest />} />
             <Route path="no-gate-in" element={<NoVBRGateIn />} />
             <Route path="gate-in" element={<VBRGateIn />} />
+            <Route path="gate-management" element={<GateManagementList />} />
             <Route path="category" element={<CategoryIndex />} />
             <Route path="accounts" element={<AccountsIndex />} />
             <Route path="location" element={<LocationIndex />} />

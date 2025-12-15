@@ -46,6 +46,17 @@ export const WaitingTransitDialog = ({ open, onOpenChange }) => {
     document.head.appendChild(link);
   }, []);
 
+  // Handle Escape key
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === "Escape") {
+        onOpenChange(false);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onOpenChange]);
+
   const toggleItem = (index) => {
     const newItems = [...items];
     newItems[index].selected = !newItems[index].selected;

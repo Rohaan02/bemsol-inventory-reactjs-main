@@ -1,8 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { WaitingTransitDialog } from "../../Dialogs/WaitingTransitDialog";
 
 const VBRLoadingProcess = () => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   useEffect(() => {
     // Dynamically add Google Material Symbols stylesheet
     const link = document.createElement("link");
@@ -48,9 +51,17 @@ const VBRLoadingProcess = () => {
 
       {/* Action Buttons */}
       <div className="flex justify-end mb-6 space-x-4">
-        <Button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 font-medium transition-colors duration-200">
+        <Button
+          onClick={() => setDialogOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 font-medium transition-colors duration-200"
+        >
           <span className="material-symbols-outlined text-xl">add</span>
           Add Waiting Transit Item
+          {/* Dialog Component */}
+          <WaitingTransitDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen} // handles closing when clicking X or Cancel
+          />
         </Button>
         <Button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-100 text-purple-600 hover:bg-purple-200 font-medium transition-colors duration-200">
           <span className="material-symbols-outlined text-xl">add_box</span>

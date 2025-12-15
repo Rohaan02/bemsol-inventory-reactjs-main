@@ -70,16 +70,16 @@ import ViewUntrackItem from "./Pages/UnTrackItem/ViewUntrackItem";
 import MarketPurchaseView from "./Pages/MarketPurchase/MarketPurchaseView";
 import InterTransferIndex from "./Pages/InterStoreTransfer/InterTransferIndex";
 import ShowPurchaseOrder from "./Pages/PurchaseOrder/ShowPurchaseOrder";
-import WaitingForTransit from "./components/Comments/WaitingForTransit";
+import WaitingForTransit from "./components/Pages/WaitingForTransit";
 import useIdleLogout from "./useIdleLogout";
 import CreateShipment from "./components/Comments/CreateShipment";
 import ShipmentsList from "./components/Comments/ShipmentsList";
-import CreateAsset from "./components/Comments/AssetManagement/CreateAsset";
-import VBRList from "./components/Comments/VBR/VBRList";
-import VBRDetails from "./components/Comments/VBR/VBRDetails";
-import VBRForm from "./components/Comments/VBR/VBRForm";
-import GateIn from "./components/Comments/VBR/VBRManagement";
-import VBRLoadingProcess from "./components/Comments/VBR/VBRLoadingProcess";
+import CreateAsset from "./components/Pages/AssetManagement/CreateAsset";
+import VBRList from "./components/Pages/VBR/VBRList";
+import VBRDetails from "./components/Pages/VBR/VBRDetails";
+import VBRForm from "./components/Pages/VBR/VBRForm";
+import GateIn from "./components/Pages/VBR/VBRManagement";
+import VBRLoadingProcess from "./components/Pages/VBR/VBRLoadingProcess";
 
 function App() {
   useIdleLogout();

@@ -70,7 +70,10 @@ export const WaitingTransitDialog = ({ open, onOpenChange }) => {
       ></div>
 
       {/* Modal */}
-      <div className="relative w-full max-w-6xl bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden flex flex-col">
+      <div
+        className="relative w-full max-w-6xl bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+      >
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h3 className="text-xl font-bold text-[#052e16]">
@@ -107,9 +110,9 @@ export const WaitingTransitDialog = ({ open, onOpenChange }) => {
             <ul className="divide-y divide-gray-100">
               {["SHP-2023-089", "SHP-2023-092", "SHP-2023-104"].map((ship) => (
                 <li key={ship}>
-                  <button
+                  <div
                     onClick={() => setSelectedShipment(ship)}
-                    className={`w-full text-left px-4 py-4 border-l-4 shadow-sm ${
+                    className={`w-full cursor-pointer text-left px-4 py-4 border-l-4 shadow-sm ${
                       selectedShipment === ship
                         ? "bg-white border-primary"
                         : "border-transparent hover:bg-gray-50 transition-colors"
@@ -137,7 +140,7 @@ export const WaitingTransitDialog = ({ open, onOpenChange }) => {
                     <p className="text-xs text-primary mt-2 font-medium">
                       3 Waiting Items
                     </p>
-                  </button>
+                  </div>
                 </li>
               ))}
             </ul>

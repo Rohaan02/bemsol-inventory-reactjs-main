@@ -78,6 +78,8 @@ import CreateAsset from "./components/Comments/AssetManagement/CreateAsset";
 import VBRList from "./components/Comments/VBR/VBRList";
 import VBRDetails from "./components/Comments/VBR/VBRDetails";
 import VBRForm from "./components/Comments/VBR/VBRForm";
+import GateIn from "./components/Comments/VBR/VBRManagement";
+import VBRLoadingProcess from "./components/Comments/VBR/VBRLoadingProcess";
 
 function App() {
   useIdleLogout();
@@ -110,6 +112,8 @@ function App() {
             <Route path="vbr-details/:id" element={<VBRDetails />} />
             <Route path="vbr/create" element={<VBRForm />} />
             <Route path="vbr/edit/:id" element={<VBRForm />} />
+            <Route path="vbr-management/gate-in" element={<GateIn />} />
+            <Route path="vbr-management/loading" element={<VBRLoadingProcess />} />
             <Route path="category" element={<CategoryIndex />} />
             <Route path="accounts" element={<AccountsIndex />} />
             <Route path="location" element={<LocationIndex />} />

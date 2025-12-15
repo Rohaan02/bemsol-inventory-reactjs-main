@@ -48,6 +48,8 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         "/create-shipment",
         "/assets-management",
         "/vbr",
+        "/vbr-management/gate-in",
+        "/vbr-management/loading",
       ],
       settings: [
         "/app-settings",
@@ -595,6 +597,8 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         "/create-shipment",
                         "/assets-management",
                         "/vbr",
+                        "/vbr-management/gate-in",
+                        "/vbr-management/loading",
                       ])
                         ? "text-white"
                         : "text-green-100 hover:bg-green-700 hover:text-white"
@@ -609,6 +613,8 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                       "/create-shipment",
                       "/assets-management",
                       "/vbr",
+                      "/vbr-management/gate-in",
+                      "/vbr-management/loading",
                     ]) && (
                       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
                     )}
@@ -757,6 +763,38 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
                           )}
                           VBR List
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/vbr-management/gate-in"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/vbr-management/gate-in")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/vbr-management/gate-in") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          VBR Management
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/vbr-management/loading"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/vbr-management/loading")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/vbr-management/loading") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          VBR Loading Process
                         </Link>
                       </li>
                     </ul>

@@ -68,6 +68,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         "/gate-out-request",
         "/gate-out-security",
       ],
+      procureFlow: ["/create-transfer"],
       settings: [
         "/app-settings",
         "/category",
@@ -908,117 +909,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   )}
                 </li>
               )}
-              {/* Gate Management Dropdown
-              {hasPermission("view_item") && (
-                <li>
-                  <button
-                    className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors relative ${
-                      isMenuActive([
-                        "/gate-out-request",
-                        "/gate-out-approval",
-                        "/gate-out-security",
-                      ])
-                        ? "text-white"
-                        : "text-green-100 hover:bg-green-700 hover:text-white"
-                    }`}
-                    onClick={() => toggleMenu("gateManagement")}
-                  >
-                    {isMenuActive([
-                      "/gate-out-request",
-                      "/gate-out-approval",
-                      "/gate-out-security",
-                    ]) && (
-                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
-                    )}
-                    <div className="flex items-center">
-                      <svg
-                        className="w-5 h-5 mr-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                        />
-                      </svg>
-                      <span>Gate Management</span>
-                    </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${
-                        openMenu === "gateManagement"
-                          ? "transform rotate-180"
-                          : ""
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
 
-                  {openMenu === "gateManagement" && (
-                    <ul className="pl-9 mt-1 space-y-1">
-                      <li>
-                        <Link
-                          to="/gate-out-approval"
-                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
-                            isActiveRoute("/gate-out-approval")
-                              ? "text-white"
-                              : "text-green-100 hover:bg-green-700 hover:text-white"
-                          }`}
-                          onClick={() => setSidebarOpen(false)}
-                        >
-                          {isActiveRoute("/gate-out-approval") && (
-                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
-                          )}
-                          L1 Approval
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          to="/gate-out-request"
-                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
-                            isActiveRoute("/gate-out-request")
-                              ? "text-white"
-                              : "text-green-100 hover:bg-green-700 hover:text-white"
-                          }`}
-                          onClick={() => setSidebarOpen(false)}
-                        >
-                          {isActiveRoute("/gate-out-request") && (
-                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
-                          )}
-                          Approvals
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          to="/gate-out-security"
-                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
-                            isActiveRoute("/gate-out-security")
-                              ? "text-white"
-                              : "text-green-100 hover:bg-green-700 hover:text-white"
-                          }`}
-                          onClick={() => setSidebarOpen(false)}
-                        >
-                          {isActiveRoute("/gate-out-security") && (
-                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
-                          )}
-                          Security Gate Out
-                        </Link>
-                      </li>
-                    </ul>
-                  )}
-                </li>
-              )} */}
               {/* Gate Management Dropdown */}
               {hasPermission("view_item") && (
                 <li>
@@ -1121,6 +1012,68 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   )}
                 </li>
               )}
+
+              {/* ProcureFlow Dropdown */}
+              {hasPermission("view_item") && (
+                <li>
+                  <button
+                    className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors relative ${
+                      isMenuActive(["/create-transfer"])
+                        ? "text-white"
+                        : "text-green-100 hover:bg-green-700 hover:text-white"
+                    }`}
+                    onClick={() => toggleMenu("procureFlow")}
+                  >
+                    {isMenuActive(["/create-transfer"]) && (
+                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
+                    )}
+                    <div className="flex items-center">
+                      {/* Inventory icon with emerald color */}
+                      <span className="material-icons mr-3 text-emerald-400">
+                        inventory_2
+                      </span>
+                      <span>ProcureFlow</span>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        openMenu === "procureFlow" ? "transform rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {openMenu === "procureFlow" && (
+                    <ul className="pl-9 mt-1 space-y-1">
+                      <li>
+                        <Link
+                          to="/create-transfer"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/create-transfer")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/create-transfer") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Transfer
+                        </Link>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              )}
+
               {/* Settings Dropdown */}
               <li>
                 <button

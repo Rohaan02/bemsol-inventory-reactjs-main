@@ -89,6 +89,7 @@ import GateManagementList from "./components/Pages/GateProcessManagement/GateMan
 import GateOutL1Approval from "./components/Pages/GateProcessManagement/GateOutL1Approval";
 import GateOutL2Approval from "./components/Pages/GateProcessManagement/GateOutL2Approval";
 import GateOutwardSecurity from "./components/Pages/GateProcessManagement/GateOutwardSecurity";
+import CreateTransferRequest from "./components/Pages/GateProcessManagement/CreateTransferRequest";
 
 function App() {
   useIdleLogout();
@@ -138,6 +139,7 @@ function App() {
             <Route path="gate-out-approval" element={<GateOutL1Approval />} />
             <Route path="gate-out-request" element={<GateOutL2Approval />} />
             <Route path="gate-out-security" element={<GateOutwardSecurity />} />
+            <Route path="create-transfer" element={<CreateTransferRequest />} />
             <Route path="category" element={<CategoryIndex />} />
             <Route path="accounts" element={<AccountsIndex />} />
             <Route path="location" element={<LocationIndex />} />

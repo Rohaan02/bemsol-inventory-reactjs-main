@@ -80,6 +80,7 @@ import VBRDetails from "./components/Pages/VBR/VBRDetails";
 import VBRForm from "./components/Pages/VBR/VBRForm";
 import GateIn from "./components/Pages/VBR/VBRManagement";
 import VBRLoadingProcess from "./components/Pages/VBR/VBRLoadingProcess";
+import { DispatchApproval } from "./components/Pages/VBR/DispatchApproval";
 
 function App() {
   useIdleLogout();
@@ -113,7 +114,14 @@ function App() {
             <Route path="vbr/create" element={<VBRForm />} />
             <Route path="vbr/edit/:id" element={<VBRForm />} />
             <Route path="vbr-management/gate-in" element={<GateIn />} />
-            <Route path="vbr-management/loading" element={<VBRLoadingProcess />} />
+            <Route
+              path="vbr-management/loading"
+              element={<VBRLoadingProcess />}
+            />
+            <Route
+              path="vbr-management/dispatch"
+              element={<DispatchApproval />}
+            />
             <Route path="category" element={<CategoryIndex />} />
             <Route path="accounts" element={<AccountsIndex />} />
             <Route path="location" element={<LocationIndex />} />

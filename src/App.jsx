@@ -70,8 +70,18 @@ import ViewUntrackItem from "./Pages/UnTrackItem/ViewUntrackItem";
 import MarketPurchaseView from "./Pages/MarketPurchase/MarketPurchaseView";
 import InterTransferIndex from "./Pages/InterStoreTransfer/InterTransferIndex";
 import ShowPurchaseOrder from "./Pages/PurchaseOrder/ShowPurchaseOrder";
+import WaitingForTransit from "./components/Comments/WaitingForTransit";
+import useIdleLogout from "./useIdleLogout";
+import CreateShipment from "./components/Comments/CreateShipment";
+import ShipmentsList from "./components/Comments/ShipmentsList";
+import CreateAsset from "./components/Comments/AssetManagement/CreateAsset";
+import VBRList from "./components/Comments/VBR/VBRList";
+import VBRDetails from "./components/Comments/VBR/VBRDetails";
+import VBRForm from "./components/Comments/VBR/VBRForm";
 
 function App() {
+  useIdleLogout();
+
   useEffect(() => {
     // Set the zoom level to 75% on component mount
   }, []);
@@ -81,7 +91,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
+
           {/* Protected routes with Layout */}
           <Route
             path="/*"
@@ -92,6 +102,14 @@ function App() {
             }
           >
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="waiting-for-transit" element={<WaitingForTransit />} />
+            <Route path="create-shipment" element={<CreateShipment />} />
+            <Route path="shipments" element={<ShipmentsList />} />
+            <Route path="assets-management" element={<CreateAsset />} />
+            <Route path="vbr" element={<VBRList />} />
+            <Route path="vbr-details/:id" element={<VBRDetails />} />
+            <Route path="vbr/create" element={<VBRForm />} />
+            <Route path="vbr/edit/:id" element={<VBRForm />} />
             <Route path="category" element={<CategoryIndex />} />
             <Route path="accounts" element={<AccountsIndex />} />
             <Route path="location" element={<LocationIndex />} />
@@ -104,7 +122,10 @@ function App() {
             <Route path="inventory/edit/:id" element={<EditItem />} />
             <Route path="untracked-items" element={<UntrackItemIndex />} />
             <Route path="untrack-items/add" element={<AddUntrackItem />} />
-            <Route path="untrack-items/edit/:id" element={<EditUntrackItem />} />
+            <Route
+              path="untrack-items/edit/:id"
+              element={<EditUntrackItem />}
+            />
             <Route path="item-tracking/track/:id" element={<ItemTracking />} />
             <Route path="users" element={<UserIndex />} />
             <Route path="users/add" element={<AddNewUser />} />
@@ -172,7 +193,10 @@ function App() {
             <Route path="permissions" element={<PermissionsIndex />} />
             <Route path="employees" element={<EmployeeIndex />} />
             <Route path="site-demands/track/:id" element={<TrackDemand />} />
-            <Route path="untrack-items/show/:id" element={<ViewUntrackItem />} />
+            <Route
+              path="untrack-items/show/:id"
+              element={<ViewUntrackItem />}
+            />
             <Route path="inter-transfer" element={<InterTransferIndex />} />
             <Route
               path="purchase-order/show/:id"

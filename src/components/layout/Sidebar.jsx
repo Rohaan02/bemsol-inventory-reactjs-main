@@ -40,7 +40,15 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         "/purchase-orders",
         "/market-purchases",
       ],
-      logistics: ["/transit-inventory", "/shipments", "/vehicle-booking"],
+      logistics: [
+        "/transit-inventory",
+        "/shipments",
+        "/vehicle-booking",
+        "/waiting-for-transit",
+        "/create-shipment",
+        "/assets-management",
+        "/vbr",
+      ],
       settings: [
         "/app-settings",
         "/category",
@@ -583,6 +591,10 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         "/transit-inventory",
                         "/shipments",
                         "/vehicle-booking",
+                        "/waiting-for-transit",
+                        "/create-shipment",
+                        "/assets-management",
+                        "/vbr",
                       ])
                         ? "text-white"
                         : "text-green-100 hover:bg-green-700 hover:text-white"
@@ -593,6 +605,10 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                       "/transit-inventory",
                       "/shipments",
                       "/vehicle-booking",
+                      "/waiting-for-transit",
+                      "/create-shipment",
+                      "/assets-management",
+                      "/vbr",
                     ]) && (
                       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
                     )}
@@ -677,6 +693,70 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
                           )}
                           Vehicle Booking
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/waiting-for-transit"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/waiting-for-transit")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/waiting-for-transit") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Waiting For Transit
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/create-shipment"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/create-shipment")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/create-shipment") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Create Shipment
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/assets-management"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/assets-management")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/assets-management") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Assets Management
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/vbr"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/vbr")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/vbr") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          VBR List
                         </Link>
                       </li>
                     </ul>

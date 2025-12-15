@@ -21,9 +21,7 @@ const TableRow = ({ className = "", children }) => (
 );
 
 const TableHead = ({ className = "", children }) => (
-  <th
-    className={`px-4 py-2 text-left font-medium text-gray-600 ${className}`}
-  >
+  <th className={`px-4 py-2 text-left font-medium text-gray-600 ${className}`}>
     {children}
   </th>
 );

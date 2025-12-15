@@ -26,6 +26,13 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     return menuPaths.some((path) => isActiveRoute(path));
   };
 
+  useEffect(() => {
+    const iconLink = document.createElement("link");
+    iconLink.href = "https://fonts.googleapis.com/icon?family=Material+Icons";
+    iconLink.rel = "stylesheet";
+    document.head.appendChild(iconLink);
+  }, []);
+
   // Auto-open menu when route changes
   useEffect(() => {
     // Define menu paths for each dropdown
@@ -56,7 +63,11 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         "/gate-in",
         "/gate-management",
       ],
-      gateManagement: ["/gate-out-approval", "/gate-out-request"],
+      gateManagement: [
+        "/gate-out-approval",
+        "/gate-out-request",
+        "/gate-out-security",
+      ],
       settings: [
         "/app-settings",
         "/category",
@@ -897,12 +908,16 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   )}
                 </li>
               )}
-              {/* Gate Management Dropdown */}
+              {/* Gate Management Dropdown
               {hasPermission("view_item") && (
                 <li>
                   <button
                     className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors relative ${
-                      isMenuActive(["/gate-out-request", "/gate-out-approval"])
+                      isMenuActive([
+                        "/gate-out-request",
+                        "/gate-out-approval",
+                        "/gate-out-security",
+                      ])
                         ? "text-white"
                         : "text-green-100 hover:bg-green-700 hover:text-white"
                     }`}
@@ -911,6 +926,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                     {isMenuActive([
                       "/gate-out-request",
                       "/gate-out-approval",
+                      "/gate-out-security",
                     ]) && (
                       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
                     )}
@@ -981,6 +997,124 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
                           )}
                           Approvals
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/gate-out-security"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/gate-out-security")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/gate-out-security") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Security Gate Out
+                        </Link>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              )} */}
+              {/* Gate Management Dropdown */}
+              {hasPermission("view_item") && (
+                <li>
+                  <button
+                    className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors relative ${
+                      isMenuActive([
+                        "/gate-out-request",
+                        "/gate-out-approval",
+                        "/gate-out-security",
+                      ])
+                        ? "text-white"
+                        : "text-green-100 hover:bg-green-700 hover:text-white"
+                    }`}
+                    onClick={() => toggleMenu("gateManagement")}
+                  >
+                    {isMenuActive([
+                      "/gate-out-request",
+                      "/gate-out-approval",
+                      "/gate-out-security",
+                    ]) && (
+                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
+                    )}
+                    <div className="flex items-center">
+                      {/* Updated icon */}
+                      <span className="material-icons text-xl mr-3">
+                        warehouse
+                      </span>
+                      <span>Gate Management</span>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        openMenu === "gateManagement"
+                          ? "transform rotate-180"
+                          : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {openMenu === "gateManagement" && (
+                    <ul className="pl-9 mt-1 space-y-1">
+                      <li>
+                        <Link
+                          to="/gate-out-approval"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/gate-out-approval")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/gate-out-approval") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          L1 Approval
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/gate-out-request"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/gate-out-request")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/gate-out-request") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Approvals
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/gate-out-security"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/gate-out-security")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/gate-out-security") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Security Gate Out
                         </Link>
                       </li>
                     </ul>

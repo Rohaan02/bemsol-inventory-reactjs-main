@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import {
@@ -23,6 +23,13 @@ const CreateShipment = () => {
       sendQty: 80,
     },
   ]);
+
+  useEffect(() => {
+    const iconLink = document.createElement("link");
+    iconLink.href = "https://fonts.googleapis.com/icon?family=Material+Icons";
+    iconLink.rel = "stylesheet";
+    document.head.appendChild(iconLink);
+  }, []);
 
   const [addedWeight, setAddedWeight] = useState("");
   const [vehicleType, setVehicleType] = useState("");
@@ -95,9 +102,7 @@ const CreateShipment = () => {
 
         {/* Line Items */}
         <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-lg font-semibold text-[#052e16] mb-4">
-            Line Items
-          </h2>
+          <h2 className="text-lg font-semibold text-[#052e16] mb-4">Items</h2>
 
           <div className="flex gap-3 mb-4">
             <button className="bg-[#052e16] text-white px-4 py-2 rounded-[0.5rem] hover:bg-green-900 transition">

@@ -10,7 +10,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
+import {
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Eye,
+  Ban,
+  CheckCircle,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const InventoryTable = ({
   items,
@@ -21,26 +29,29 @@ const InventoryTable = ({
   onUpdateStatus,
   visibleColumns = [], // All columns visible by default
 }) => {
+  const navigate = useNavigate();
+
   // Define all possible columns
   const allColumns = [
-    { key: 'select', label: 'Select', visible: true },
-    { key: 'image', label: 'Image', visible: true },
-    { key: 'code', label: 'Code', visible: true },
-    { key: 'name', label: 'Name', visible: true },
-    { key: 'mfc', label: 'Mfc', visible: true },
-    { key: 'category', label: 'Category', visible: true },
-    {key:  'unit', label: 'Unit', visible: true},
-    { key: 'location', label: 'Location', visible: true },
-   
-    { key: 'unit_cost', label: 'Unit Cost', visible: true },
-    { key: 'status', label: 'Status', visible: true },
-    { key: 'actions', label: 'Actions', visible: true },
+    { key: "select", label: "Select", visible: true },
+    { key: "image", label: "Image", visible: true },
+    { key: "code", label: "Code", visible: true },
+    { key: "name", label: "Name", visible: true },
+    { key: "mfc", label: "Mfc", visible: true },
+    { key: "category", label: "Category", visible: true },
+    { key: "unit", label: "Unit", visible: true },
+    { key: "location", label: "Location", visible: true },
+
+    { key: "unit_cost", label: "Unit Cost", visible: true },
+    { key: "status", label: "Status", visible: true },
+    { key: "actions", label: "Actions", visible: true },
   ];
 
   // Use provided visibleColumns or default to all columns
-  const columnsToShow = visibleColumns.length > 0 
-    ? allColumns.filter(col => visibleColumns.includes(col.key))
-    : allColumns;
+  const columnsToShow =
+    visibleColumns.length > 0
+      ? allColumns.filter((col) => visibleColumns.includes(col.key))
+      : allColumns;
 
   const handleSelectItem = (itemId) => {
     const newSelected = new Set(selectedItems);
@@ -61,14 +72,16 @@ const InventoryTable = ({
       onSelectItem(new Set());
     } else {
       // only active items can be selected
-      const allIds = new Set(items.filter((item) => item.is_active).map((item) => item.id));
+      const allIds = new Set(
+        items.filter((item) => item.is_active).map((item) => item.id)
+      );
       onSelectItem(allIds);
     }
   };
 
   // Helper function to check if column is visible
   const isColumnVisible = (columnKey) => {
-    return columnsToShow.some(col => col.key === columnKey);
+    return columnsToShow.some((col) => col.key === columnKey);
   };
 
   return (
@@ -78,7 +91,7 @@ const InventoryTable = ({
           <thead className="bg-gray-100 text-gray-700 text-left sticky top-0 z-10">
             <tr>
               {/* Select Column */}
-              {isColumnVisible('select') && (
+              {isColumnVisible("select") && (
                 <th className="px-4 py-3 bg-gray-100 w-12">
                   <Checkbox
                     checked={isAllSelected}
@@ -87,55 +100,53 @@ const InventoryTable = ({
                   />
                 </th>
               )}
-              
+
               {/* Image Column */}
-              {isColumnVisible('image') && (
+              {isColumnVisible("image") && (
                 <th className="px-4 py-3 bg-gray-100">Image</th>
               )}
-              
+
               {/* Code Column */}
-              {isColumnVisible('code') && (
+              {isColumnVisible("code") && (
                 <th className="px-4 py-3 bg-gray-100">Code</th>
               )}
-              
+
               {/* Name Column */}
-              {isColumnVisible('name') && (
+              {isColumnVisible("name") && (
                 <th className="px-4 py-3 bg-gray-100">Name</th>
               )}
-              
+
               {/* Manufacturer Column */}
-              {isColumnVisible('mfc') && (
+              {isColumnVisible("mfc") && (
                 <th className="px-4 py-3 bg-gray-100">Mfc</th>
               )}
-              
+
               {/* Category Column */}
-              {isColumnVisible('category') && (
+              {isColumnVisible("category") && (
                 <th className="px-4 py-3 bg-gray-100">Category</th>
               )}
               {/* Unit Column */}
-              {isColumnVisible('unit') && (
+              {isColumnVisible("unit") && (
                 <th className="px-4 py-3 bg-gray-100">Unit</th>
               )}
-              
+
               {/* Location Column */}
-              {isColumnVisible('location') && (
+              {isColumnVisible("location") && (
                 <th className="px-4 py-3 bg-gray-100">Location</th>
               )}
-              
-             
-              
+
               {/* Unit Cost Column */}
-              {isColumnVisible('unit_cost') && (
+              {isColumnVisible("unit_cost") && (
                 <th className="px-4 py-3 bg-gray-100 text-center">Unit Cost</th>
               )}
-              
+
               {/* Status Column */}
-              {isColumnVisible('status') && (
+              {isColumnVisible("status") && (
                 <th className="px-4 py-3 bg-gray-100">Status</th>
               )}
-              
+
               {/* Actions Column */}
-              {isColumnVisible('actions') && (
+              {isColumnVisible("actions") && (
                 <th className="px-4 py-3 bg-gray-100 text-center">Actions</th>
               )}
             </tr>
@@ -155,7 +166,7 @@ const InventoryTable = ({
                   }`}
                 >
                   {/* Select Cell */}
-                  {isColumnVisible('select') && (
+                  {isColumnVisible("select") && (
                     <td className="px-4 py-3">
                       <Checkbox
                         checked={selectedItems.has(item.id)}
@@ -166,9 +177,9 @@ const InventoryTable = ({
                       />
                     </td>
                   )}
-                  
+
                   {/* Image Cell */}
-                  {isColumnVisible('image') && (
+                  {isColumnVisible("image") && (
                     <td className="px-4 py-3">
                       {item.image_url ? (
                         <img
@@ -181,9 +192,9 @@ const InventoryTable = ({
                       )}
                     </td>
                   )}
-                  
+
                   {/* Code Cell */}
-                  {isColumnVisible('code') && (
+                  {isColumnVisible("code") && (
                     <td className="px-4 py-3">
                       <Link
                         to={`/item-tracking/track/${item.id}`}
@@ -199,57 +210,55 @@ const InventoryTable = ({
                   )}
 
                   {/* Name Cell */}
-                  {isColumnVisible('name') && (
+                  {isColumnVisible("name") && (
                     <td className="px-4 py-3">{item.item_name}</td>
                   )}
-                  
+
                   {/* Manufacturer Cell */}
-                  {isColumnVisible('mfc') && (
+                  {isColumnVisible("mfc") && (
                     <td className="px-4 py-3">
                       {item.manufacturer?.name || item.manufacturer_name || "-"}
                     </td>
                   )}
-                  
+
                   {/* Category Cell */}
-                  {isColumnVisible('category') && (
+                  {isColumnVisible("category") && (
                     <td className="px-4 py-3">
                       {item.category?.category_name || "-"}
                     </td>
                   )}
                   {/* Unit Cell */}
-                  {isColumnVisible('unit') && (
+                  {isColumnVisible("unit") && (
                     <td className="px-4 py-3">
                       {item.unit?.name || item.unit_name || "-"}
                     </td>
                   )}
-                  
+
                   {/* Location Cell */}
-                  {isColumnVisible('location') && (
+                  {isColumnVisible("location") && (
                     <td className="px-4 py-3">
-                     
-                        
-                         {item.location_names && item.location_names.length > 0
-                            ? item.location_names.join(", ")
-                            : "—"}
+                      {item.location_names && item.location_names.length > 0
+                        ? item.location_names.join(", ")
+                        : "—"}
                     </td>
                   )}
-                  
+
                   {/* Quantity Cell */}
-                  {isColumnVisible('qty') && (
+                  {isColumnVisible("qty") && (
                     <td className="px-4 py-3 text-center">
                       {item.quantity ?? 0}
                     </td>
                   )}
-                  
+
                   {/* Unit Cost Cell */}
-                  {isColumnVisible('unit_cost') && (
+                  {isColumnVisible("unit_cost") && (
                     <td className="px-4 py-3 text-center">
                       {item.unit_cost ? `PKR ${item.unit_cost}` : "-"}
                     </td>
                   )}
-                  
+
                   {/* Status Cell */}
-                  {isColumnVisible('status') && (
+                  {isColumnVisible("status") && (
                     <td className="px-4 py-3">
                       {item.is_active ? (
                         <Badge variant="success">Active</Badge>
@@ -258,9 +267,9 @@ const InventoryTable = ({
                       )}
                     </td>
                   )}
-                  
+
                   {/* Actions Cell */}
-                  {isColumnVisible('actions') && (
+                  {isColumnVisible("actions") && (
                     <td className="px-4 py-3">
                       <div className="flex justify-center">
                         <DropdownMenu>
@@ -269,7 +278,10 @@ const InventoryTable = ({
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="min-w-[140px]">
+                          <DropdownMenuContent
+                            align="end"
+                            className="min-w-[140px]"
+                          >
                             {!isInactive && (
                               <>
                                 <DropdownMenuItem
@@ -286,14 +298,29 @@ const InventoryTable = ({
                                   <Trash2 className="w-4 h-4" />
                                   <span>Delete</span>
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    navigate(`/item-tracking/track/${item.id}`)
+                                  }
+                                  className="flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  <span>View</span>
+                                </DropdownMenuItem>
                               </>
                             )}
                             <DropdownMenuItem
                               onClick={() => onUpdateStatus(item)}
                               className="flex items-center gap-2 cursor-pointer"
                             >
-                              <Eye className="w-4 h-4" />
-                              <span>{item.is_active ? "Deactivate" : "Activate"}</span>
+                              {item.is_active ? (
+                                <Ban className="w-4 h-4 text-red-500" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                              )}
+                              <span>
+                                {item.is_active ? "Deactivate" : "Activate"}
+                              </span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

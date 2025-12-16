@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import UomIndex from "./Pages/UOM/UomIndex";
 import { fr } from "zod/v4/locales";
 import { useEffect } from "react";
@@ -7,7 +7,6 @@ import "react-toastify/dist/ReactToastify.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
-
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import CategoryIndex from "./Pages/Category/CategoryIndex";
@@ -28,8 +27,6 @@ import UserPermissions from "./Pages/Users/UserPermissions";
 import AddNewUser from "./Pages/Users/AddNewUser";
 import EditUser from "./Pages/Users/EditUser";
 import AssetIndex from "./Pages/Assets/AssetIndex";
-import AddAsset from "./Pages/Assets/AddAsset";
-import EditAsset from "./Pages/Assets/EditAsset";
 import VehicleIndex from "./Pages/Vehicle/VehicleIndex";
 import AddVehicle from "./Pages/Vehicle/AddVehicle";
 import EditVehicle from "./Pages/Vehicle/EditVehicle";
@@ -74,7 +71,6 @@ import WaitingForTransit from "./components/Pages/WaitingForTransit";
 import useIdleLogout from "./useIdleLogout";
 import CreateShipment from "./components/Comments/CreateShipment";
 import ShipmentsList from "./components/Comments/ShipmentsList";
-import CreateAsset from "./components/Pages/AssetManagement/CreateAsset";
 import VBRList from "./components/Pages/VBR/VBRList";
 import VBRDetails from "./components/Pages/VBR/VBRDetails";
 import VBRForm from "./components/Pages/VBR/VBRForm";
@@ -92,11 +88,13 @@ import GateOutwardSecurity from "./components/Pages/GateProcessManagement/GateOu
 import CreateTransferRequest from "./components/Pages/GateProcessManagement/CreateTransferRequest";
 
 function App() {
-  useIdleLogout();
+  const location = useLocation();
+  // Only enable idle logout on protected routes (not on login/register)
+  const isProtectedRoute = !["/login", "/register"].includes(location.pathname);
+  if (isProtectedRoute) {
+    useIdleLogout();
+  }
 
-  useEffect(() => {
-    // Set the zoom level to 75% on component mount
-  }, []);
   return (
     <>
       <div>
@@ -117,7 +115,6 @@ function App() {
             <Route path="waiting-for-transit" element={<WaitingForTransit />} />
             <Route path="create-shipment" element={<CreateShipment />} />
             <Route path="shipments" element={<ShipmentsList />} />
-            <Route path="assets-management" element={<CreateAsset />} />
             <Route path="vbr" element={<VBRList />} />
             <Route path="vbr-details/:id" element={<VBRDetails />} />
             <Route path="vbr/create" element={<VBRForm />} />
@@ -162,8 +159,6 @@ function App() {
             <Route path="users/edit/:id" element={<EditUser />} />
             <Route path="user-permissions/:id" element={<UserPermissions />} />
             <Route path="assets" element={<AssetIndex />} />
-            <Route path="assets/add" element={<AddAsset />} />
-            <Route path="assets/edit/:id" element={<EditAsset />} />
             <Route path="vehicles" element={<VehicleIndex />} />
             <Route path="vehicles/add" element={<AddVehicle />} />
             <Route path="vehicles/edit/:id" element={<EditVehicle />} />

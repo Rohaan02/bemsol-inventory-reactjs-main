@@ -5,19 +5,22 @@ import Swal from "sweetalert2";
 
 // Components
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Filter, Search } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Eye,
+  Ban,
+  CheckCircle,
+  Download,
+  Printer,
+} from "lucide-react";
 
 // Import components
 import InventoryHeader from "./components/InventoryHeader";
 import LocationTabs from "./components/LocationTabs";
 import StatsCards from "./components/StatsCards";
-import PaginationControls from "./components/PaginationControls";
-import BulkActions from "./components/BulkActions";
-import FilterSidebar from "./components/FilterSidebar";
-import InventoryTable from "./components/InventoryTable";
-import ColumnVisibility from "./components/ColumnVisibility"; // Add this import
+import DataTable from "@/components/ui/data-table";
 
 // API helpers
 import categoryAPI from "@/lib/categoryAPI";
@@ -29,16 +32,6 @@ import inventoryItemAPI from "@/lib/InventoryItemApi";
 const ItemsIndex = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-
-  // Search and filter state
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState({
-    category: "",
-    location: "",
-    account_id: "",
-    status: "",
-  });
 
   const [activeTab, setActiveTab] = useState("All");
   const [inventoryStats, setInventoryStats] = useState({
@@ -48,32 +41,13 @@ const ItemsIndex = () => {
     totalValue: 0,
   });
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
   // Dropdown state
   const [categories, setCategories] = useState([]);
   const [locations, setLocations] = useState([]);
   const [accounts, setAccounts] = useState([]);
 
-  // Multi-select state
+  // DataTable state
   const [selectedItems, setSelectedItems] = useState(new Set());
-
-  // Column visibility state
-  const [visibleColumns, setVisibleColumns] = useState([
-    "select",
-    "image",
-    "code",
-    "name",
-    "mfc",
-    "category",
-    "location",
-    "qty",
-    "unit_cost",
-    "status",
-    "actions",
-  ]);
 
   // Fetch items
   const fetchItems = async () => {
@@ -162,7 +136,7 @@ const ItemsIndex = () => {
     fetchDropdowns();
   }, []);
 
-  // Filtered items calculation
+  // Filtered items calculation (only for location tabs, DataTable handles other filters)
   const filteredItems = useMemo(() => {
     let result = [...items];
 
@@ -182,53 +156,8 @@ const ItemsIndex = () => {
       });
     }
 
-    // Apply main search term
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.item_code?.toLowerCase().includes(term) ||
-          item.item_name?.toLowerCase().includes(term) ||
-          item.specification?.toLowerCase().includes(term) ||
-          item.manufacturer_model?.toLowerCase().includes(term)
-      );
-    }
-
-    // Single-select filters
-    if (filters.category) {
-      result = result.filter(
-        (item) => item.category_id?.toString() === filters.category
-      );
-    }
-
-    if (filters.location) {
-      result = result.filter((item) => {
-        const directLocationMatch =
-          item.location_id?.toString() === filters.location;
-        const pivotLocationMatch =
-          item.itemLocations?.some(
-            (loc) => loc.location_id?.toString() === filters.location
-          ) ||
-          item.item_locations?.some(
-            (loc) => loc.location_id?.toString() === filters.location
-          );
-        return directLocationMatch || pivotLocationMatch;
-      });
-    }
-
-    if (filters.account_id) {
-      result = result.filter(
-        (item) => item.account_id?.toString() === filters.account_id
-      );
-    }
-
-    if (filters.status) {
-      const isActive = filters.status === "active";
-      result = result.filter((item) => item.is_active === isActive);
-    }
-
     return result;
-  }, [items, searchTerm, filters, activeTab]);
+  }, [items, activeTab]);
 
   // Calculate inventory stats
   useEffect(() => {
@@ -261,48 +190,10 @@ const ItemsIndex = () => {
     setInventoryStats({ totalQuantity, outOfStock, lowStock, totalValue });
   }, [filteredItems]);
 
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchTerm("");
-    setFilters({
-      category: "",
-      location: "",
-      account_id: "",
-      status: "",
-    });
-    setActiveTab("All");
-    setCurrentPage(1);
-  };
-
-  // Check if any filter is active
-  const hasActiveFilters = () => {
-    return (
-      searchTerm ||
-      Object.values(filters).some((value) => value !== "") ||
-      activeTab !== "All"
-    );
-  };
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredItems.slice(startIndex, endIndex);
-
-  // Handle filter changes
+  // Handle filter changes (for location tab coordination)
   const handleFilterChange = (filterName, value) => {
-    setFilters((prev) => ({ ...prev, [filterName]: value }));
     if (filterName === "location" && value !== "") {
       setActiveTab("All");
-    }
-  };
-
-  // Handle column visibility toggle
-  const handleColumnToggle = (columnKey, checked) => {
-    if (checked) {
-      setVisibleColumns((prev) => [...prev, columnKey]);
-    } else {
-      setVisibleColumns((prev) => prev.filter((col) => col !== columnKey));
     }
   };
 
@@ -363,6 +254,113 @@ const ItemsIndex = () => {
     Swal.fire("Info", "Export functionality will be implemented soon", "info");
   };
 
+  // DataTable configuration
+  const tableColumns = [
+    { key: "select", label: "Select", type: "select" },
+    { key: "image", label: "Image", type: "image" },
+    { key: "item_code", label: "Code", type: "link", linkTemplate: (item) => `/item-tracking/track/${item.id}` },
+    { key: "item_name", label: "Name", type: "text" },
+    { key: "manufacturer_name", label: "Manufacturer", type: "text" },
+    { key: "category_name", label: "Category", type: "text" },
+    { key: "location_names", label: "Location", type: "text" },
+    { key: "total_quantity", label: "Qty", type: "number", align: "center" },
+    { key: "unit_cost", label: "Unit Cost", type: "currency", align: "center" },
+    { key: "is_active", label: "Status", type: "badge" },
+    { key: "actions", label: "Actions", type: "actions" },
+  ];
+
+  const tableFilters = [
+    {
+      key: "category_id",
+      label: "Category",
+      options: categories.map(cat => ({ value: cat.id.toString(), label: cat.category_name }))
+    },
+    {
+      key: "location_id",
+      label: "Location",
+      options: locations.map(loc => ({ value: loc.id.toString(), label: loc.name }))
+    },
+    {
+      key: "account_id",
+      label: "Account",
+      options: accounts.map(acc => ({ value: acc.id.toString(), label: acc.account_name }))
+    },
+    {
+      key: "is_active",
+      label: "Status",
+      options: [
+        { value: "true", label: "Active" },
+        { value: "false", label: "Inactive" }
+      ]
+    },
+  ];
+
+  const tableRowActions = [
+    {
+      key: "edit",
+      label: "Edit",
+      icon: <Edit className="w-4 h-4" />,
+      onClick: handleEditClick,
+      showCondition: (item) => item.is_active
+    },
+    {
+      key: "delete",
+      label: "Delete",
+      icon: <Trash2 className="w-4 h-4" />,
+      onClick: handleDeleteClick,
+      showCondition: (item) => item.is_active
+    },
+    {
+      key: "view",
+      label: "View",
+      icon: <Eye className="w-4 h-4" />,
+      onClick: (item) => navigate(`/item-tracking/track/${item.id}`)
+    },
+    {
+      key: "toggle_status",
+      label: (item) => item.is_active ? "Deactivate" : "Activate",
+      icon: (item) => item.is_active ?
+        <Ban className="w-4 h-4 text-red-500" /> :
+        <CheckCircle className="w-4 h-4 text-green-500" />,
+      onClick: handleUpdateStatusClick
+    },
+  ];
+
+  const tableBulkActions = [
+    {
+      key: "add_to_demand",
+      label: "Add to Demand",
+      icon: <Download className="w-4 h-4" />,
+      onClick: () => console.log("Add to demand")
+    },
+    {
+      key: "print_labels",
+      label: "Print Labels",
+      icon: <Printer className="w-4 h-4" />,
+      onClick: () => console.log("Print labels")
+    },
+    {
+      key: "archive",
+      label: "Archive",
+      icon: <Ban className="w-4 h-4" />,
+      onClick: handleBulkArchive
+    },
+  ];
+
+  const customRenderers = {
+    manufacturer_name: (item) => item.manufacturer?.name || item.manufacturer_name || "-",
+    category_name: (item) => item.category?.category_name || "-",
+    location_names: (item) => item.location_names && item.location_names.length > 0
+      ? item.location_names.join(", ")
+      : "—",
+    total_quantity: (item) => item.total_quantity ?? item.quantity ?? 0,
+    is_active: (item) => item.is_active ? (
+      <Badge variant="success">Active</Badge>
+    ) : (
+      <Badge variant="destructive">Inactive</Badge>
+    ),
+  };
+
   // Column definitions for visibility control
   const columnDefinitions = [
     { key: "select", label: "Select" },
@@ -398,88 +396,16 @@ const ItemsIndex = () => {
           {/* Stats Cards */}
           <StatsCards stats={inventoryStats} />
 
-          {/* Table Controls */}
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-sm text-gray-600">
-              Showing {currentItems.length} of {filteredItems.length} items
-              {selectedItems.size > 0 && ` • ${selectedItems.size} selected`}
-            </span>
-
-            <div className="flex items-center gap-3">
-              {/* Search Input */}
-              <div className="relative w-48">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-9 text-sm"
-                />
-              </div>
-
-              {/* Column Visibility */}
-              <ColumnVisibility
-                columns={columnDefinitions}
-                visibleColumns={visibleColumns}
-                onColumnToggle={handleColumnToggle}
-              />
-
-              {/* Pagination Controls */}
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={setItemsPerPage}
-              />
-
-              {/* Filter Button */}
-              <Button
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className="flex items-center gap-2 bg-primary-color hover:bg-primary-color/90 text-white h-9"
-              >
-                <Filter className="h-4 w-4" />
-                Filters
-                {hasActiveFilters() && (
-                  <Badge className="w-5 h-5 flex items-center justify-center bg-red-500 text-white p-0 text-xs">
-                    !
-                  </Badge>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Bulk Actions */}
-          {selectedItems.size > 0 && (
-            <BulkActions
-              selectedCount={selectedItems.size}
-              onAddToDemand={() => console.log("Add to demand")}
-              onPrintLabels={() => console.log("Print labels")}
-              onArchive={handleBulkArchive}
-            />
-          )}
-
-          {/* Filter Sidebar */}
-          <FilterSidebar
-            isOpen={filtersOpen}
-            onClose={() => setFiltersOpen(false)}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            categories={categories}
-            locations={locations}
-            accounts={accounts}
-            onClearFilters={clearFilters}
-          />
-
-          {/* Inventory Table */}
-          <InventoryTable
-            items={currentItems}
-            selectedItems={selectedItems}
-            onSelectItem={setSelectedItems}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            onUpdateStatus={handleUpdateStatusClick}
-            visibleColumns={visibleColumns}
+          {/* Data Table */}
+          <DataTable
+            data={filteredItems}
+            columns={tableColumns}
+            searchKeys={["item_code", "item_name", "specification", "manufacturer_model"]}
+            filterOptions={tableFilters}
+            rowActions={tableRowActions}
+            bulkActions={tableBulkActions}
+            onSelectionChange={setSelectedItems}
+            customRenderers={customRenderers}
           />
     </div>
   );

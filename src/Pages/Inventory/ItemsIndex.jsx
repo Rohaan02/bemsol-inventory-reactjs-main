@@ -406,6 +406,8 @@ const ItemsIndex = () => {
             bulkActions={tableBulkActions}
             onSelectionChange={setSelectedItems}
             customRenderers={customRenderers}
+            getRowClassName={(item) => !item.is_active ? 'bg-gray-200 cursor-not-allowed' : ''}
+            getRowCursor={(item) => !item.is_active ? 'cursor-not-allowed' : ''}
           />
     </div>
   );

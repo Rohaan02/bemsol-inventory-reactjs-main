@@ -328,6 +328,8 @@ const UntrackItemIndex = () => {
         customRenderers={customRenderers}
         loading={loading}
         emptyMessage="No untracked items found"
+        getRowClassName={(item) => item.archived ? 'bg-gray-200 cursor-not-allowed' : ''}
+        getRowCursor={(item) => item.archived ? 'cursor-not-allowed' : ''}
       />
 
       {/* Bulk Import Modal */}

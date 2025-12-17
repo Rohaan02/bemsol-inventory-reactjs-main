@@ -254,6 +254,10 @@ const DataTable = ({
   // Custom renderers
   customRenderers = {}, // Object with column keys as keys and render functions as values
 
+  // Row styling
+  getRowClassName, // Function that takes an item and returns additional CSS classes
+  getRowCursor, // Function that takes an item and returns cursor style
+
   // Loading state
   loading = false,
 
@@ -543,15 +547,17 @@ const DataTable = ({
               </thead>
               <tbody>
                 {paginatedData.map((item) => (
-                  <tr
-                    key={item.id}
-                    className={`border-t ${
-                      selectedItems.has(item.id)
-                        ? "bg-blue-50 hover:bg-blue-100"
-                        : "hover:bg-gray-50"
-                    } ${onRowClick ? 'cursor-pointer' : ''}`}
-                    onClick={() => onRowClick?.(item)}
-                  >
+                <tr
+                  key={item.id}
+                  className={`border-t ${
+                    selectedItems.has(item.id)
+                      ? "bg-blue-50 hover:bg-blue-100"
+                      : "hover:bg-gray-50"
+                  } ${getRowClassName ? getRowClassName(item) : ''} ${
+                    getRowCursor ? getRowCursor(item) : (onRowClick ? 'cursor-pointer' : '')
+                  }`}
+                  onClick={() => onRowClick?.(item)}
+                >
                     {/* Select Cell */}
                     {selectable && visibleColumns.includes('select') && (
                       <td className="px-4 py-3">

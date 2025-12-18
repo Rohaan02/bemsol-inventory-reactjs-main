@@ -1,13 +1,15 @@
 // src/pages/Assets/AssetIndex.jsx
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/themes";
 import { toast } from "react-toastify";
-import assetAPI from "@/lib/assetApi";
-import ItemtypeAPI from "@/lib/ItemtypeAPI";
-import inventoryItemAPI from "@/lib/InventoryItemApi";
+import assetAPI from "@/lib/assetAPI";
+import categoryAPI from "@/lib/categoryAPI";
+import unitApi from "@/lib/unitApi";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -20,12 +22,20 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Plus,
   Trash2,
   Pencil,
   MoreVertical,
   Download,
   Search,
+  Settings,
+  ArrowUpDown,
+  Eye,
+  EyeOff,
+  X,
+  Filter,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,41 +43,57 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Select from "react-select";
 
 const AssetIndex = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [assets, setAssets] = useState([]);
   const [meta, setMeta] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedAssets, setSelectedAssets] = useState(new Set());
   const [isAllSelected, setIsAllSelected] = useState(false);
-  const [types, setTypes] = useState([]);
-  const [inventoryItems, setInventoryItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [units, setUnits] = useState([]);
   const [filters, setFilters] = useState({
-    type_id: "",
-    inventory_item_id: "",
-    status: "",
+    asset_type: "",
   });
   const [pageSize, setPageSize] = useState(10);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+
+  // Column visibility settings
+  const [visibleColumns, setVisibleColumns] = useState({
+    image_url: true,
+    item_code: true,
+    item_name: true,
+    model_no: true,
+    category: true,
+    unit: true,
+    unit_price: true,
+    asset_type: true,
+    maintenance: false,
+    tag_prefix: false,
+    specifications: false,
+    manufacturer_name: false,
+    vendor_name: false,
+    status: false,
+    created_at: false,
+  });
 
   const navigate = useNavigate();
 
-  // Fetch dropdown data
+  // Fetch dropdown data (still needed for display)
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const [typesRes, inventoryRes] = await Promise.all([
-          ItemtypeAPI.getAll(),
-          inventoryItemAPI.getAll(),
+        const [categoriesRes, unitsRes] = await Promise.all([
+          categoryAPI.getAllCategories(),
+          unitApi.getAll(),
         ]);
-        console.log("Types response:", typesRes);
-        console.log("Inventory items response:", inventoryRes);
-        setTypes(typesRes || []);
-        setInventoryItems(inventoryRes || []);
+        setCategories(categoriesRes || []);
+        setUnits(unitsRes || []);
       } catch (error) {
         console.error("Failed to fetch dropdown data:", error);
-        toast.error("Failed to load filter data");
       }
     };
     fetchDropdownData();
@@ -78,11 +104,9 @@ const AssetIndex = () => {
       setLoading(true);
       const params = {
         page,
-        per_page: pageSize === "all" ? 1000 : pageSize, // Large number for "all"
+        per_page: pageSize === "all" ? 1000 : pageSize,
         search: search || undefined,
-        type_id: filters.type_id || undefined,
-        inventory_item_id: filters.inventory_item_id || undefined,
-        status: filters.status || undefined,
+        asset_type: filters.asset_type || undefined,
       };
 
       console.log("Fetching assets with params:", params);
@@ -122,32 +146,11 @@ const AssetIndex = () => {
     fetchAssets(1);
   }, [search, filters, pageSize]);
 
-  // Format data for react-select
-  const typeOptions = useMemo(
-    () =>
-      types.map((type) => ({
-        value: type.id?.toString(),
-        label: type.type_name || type.name || `Type ${type.id}`,
-      })),
-    [types]
-  );
-
-  const inventoryItemOptions = useMemo(
-    () =>
-      inventoryItems.map((item) => ({
-        value: item.id?.toString(),
-        label: `${item.item_number || ""} - ${
-          item.item_name || `Item ${item.id}`
-        }`,
-      })),
-    [inventoryItems]
-  );
-
-  const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
-    { value: "maintenance", label: "Under Maintenance" },
+  const assetTypeOptions = [
+    { value: "", label: "All Types" },
+    { value: "asset", label: "Asset" },
+    { value: "machine", label: "Machinery" },
+    { value: "power_tools", label: "Power Tools" },
   ];
 
   const pageSizeOptions = [
@@ -158,45 +161,67 @@ const AssetIndex = () => {
     { value: "all", label: "All records" },
   ];
 
-  // Custom styles for react-select
-  const customStyles = {
-    control: (base, state) => ({
-      ...base,
-      height: "40px",
-      minHeight: "40px",
-      fontSize: "14px",
-      borderColor: state.isFocused ? "#16a34a" : "#d1d5db",
-      boxShadow: state.isFocused ? "0 0 0 1px #16a34a" : "none",
-      "&:hover": {
-        borderColor: state.isFocused ? "#16a34a" : "#9ca3af",
-      },
-    }),
-    menu: (base) => ({
-      ...base,
-      fontSize: "14px",
-      zIndex: 50,
-    }),
-    option: (base, state) => ({
-      ...base,
-      backgroundColor: state.isSelected
-        ? "#16a34a"
-        : state.isFocused
-        ? "#dcfce7"
-        : "white",
-      color: state.isSelected ? "white" : "#1f2937",
-      "&:active": {
-        backgroundColor: "#16a34a",
-        color: "white",
-      },
-    }),
-    singleValue: (base) => ({
-      ...base,
-      color: "#1f2937",
-    }),
-    placeholder: (base) => ({
-      ...base,
-      color: "#9ca3af",
-    }),
+  // Column definitions
+  const columns = [
+    { key: "image_url", label: "Image", sortable: false },
+    { key: "item_code", label: "Item Code", sortable: true },
+    { key: "item_name", label: "Item Name", sortable: true },
+    { key: "model_no", label: "Model No", sortable: true },
+    { key: "category", label: "Category", sortable: true },
+    { key: "unit", label: "Unit", sortable: true },
+    { key: "unit_price", label: "Unit Price", sortable: true },
+    { key: "asset_type", label: "Asset Type", sortable: true },
+    { key: "maintenance", label: "Maintenance", sortable: true },
+    { key: "tag_prefix", label: "Tag Prefix", sortable: true },
+    { key: "specifications", label: "Specifications", sortable: true },
+    { key: "manufacturer_name", label: "Manufacturer", sortable: true },
+    { key: "vendor_name", label: "Vendor", sortable: true },
+    { key: "status", label: "Status", sortable: true },
+    { key: "created_at", label: "Created At", sortable: true },
+  ];
+
+  // Get visible columns
+  const getVisibleColumns = () => {
+    return columns.filter((col) => visibleColumns[col.key]);
+  };
+
+  // Handle column visibility toggle
+  const toggleColumnVisibility = (columnKey) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
+
+  // Reset to default visible columns
+  const resetColumnVisibility = () => {
+    const newVisibility = {
+      image_url: true,
+      item_code: true,
+      item_name: true,
+      model_no: true,
+      category: true,
+      unit: true,
+      unit_price: true,
+      asset_type: true,
+      maintenance: false,
+      tag_prefix: false,
+      specifications: false,
+      manufacturer_name: false,
+      vendor_name: false,
+      status: false,
+      created_at: false,
+    };
+    setVisibleColumns(newVisibility);
+  };
+
+  // Show all columns
+  const showAllColumns = () => {
+    const newVisibility = {};
+    columns.forEach((col) => {
+      newVisibility[col.key] = true;
+    });
+    setVisibleColumns(newVisibility);
   };
 
   // Multi-select
@@ -217,6 +242,29 @@ const AssetIndex = () => {
       setSelectedAssets(allIds);
       setIsAllSelected(true);
     }
+  };
+
+  // Sorting
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+
+    // Sort the assets array
+    const sortedAssets = [...assets].sort((a, b) => {
+      const aValue = a[key] || "";
+      const bValue = b[key] || "";
+
+      if (direction === "asc") {
+        return aValue.toString().localeCompare(bValue.toString());
+      } else {
+        return bValue.toString().localeCompare(aValue.toString());
+      }
+    });
+
+    setAssets(sortedAssets);
   };
 
   const handleDelete = async (id) => {
@@ -254,43 +302,18 @@ const AssetIndex = () => {
     // Export functionality would go here
   };
 
-  const handleFilterChange = (name, selectedOption) => {
+  const handleFilterChange = (name, value) => {
     setFilters((prev) => ({
       ...prev,
-      [name]: selectedOption ? selectedOption.value : "",
+      [name]: value,
     }));
   };
 
   const clearFilters = () => {
     setFilters({
-      type_id: "",
-      inventory_item_id: "",
-      status: "",
+      asset_type: "",
     });
     setSearch("");
-  };
-
-  const generatePageNumbers = () => {
-    if (!meta.last_page || meta.last_page <= 1) return [];
-
-    const pages = [];
-    const current = meta.current_page;
-    const last = meta.last_page;
-    const delta = 2;
-
-    for (let i = 1; i <= last; i++) {
-      if (
-        i === 1 ||
-        i === last ||
-        (i >= current - delta && i <= current + delta)
-      ) {
-        pages.push(i);
-      } else if (pages[pages.length - 1] !== "...") {
-        pages.push("...");
-      }
-    }
-
-    return pages;
   };
 
   const ActionDropdown = ({ asset }) => (
@@ -331,22 +354,173 @@ const AssetIndex = () => {
   const currentRecords = assets.length;
   const recordsInfo = `${currentRecords}/${totalRecords}`;
 
-  // Get current values for react-select
-  const currentTypeValue =
-    typeOptions.find((option) => option.value === filters.type_id) || null;
-  const currentInventoryValue =
-    inventoryItemOptions.find(
-      (option) => option.value === filters.inventory_item_id
-    ) || null;
-  const currentStatusValue =
-    statusOptions.find((option) => option.value === filters.status) || null;
-  const currentPageSizeValue =
-    pageSizeOptions.find((option) => option.value === pageSize.toString()) ||
-    pageSizeOptions[1];
+  // Get display value for fields
+  const getDisplayValue = (asset, columnKey) => {
+    switch (columnKey) {
+      case "image_url":
+        return asset.image_url ? (
+          <div className="w-12 h-12 flex items-center justify-center">
+            <img
+              src={asset.image_url}
+              alt={asset.item_name}
+              className="w-full h-full object-cover rounded-md border border-gray-200"
+              onError={(e) => {
+                e.target.style.display = "none";
+                e.target.parentElement.innerHTML =
+                  '<div class="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center"><span class="text-gray-400 text-xs">No Image</span></div>';
+              }}
+            />
+          </div>
+        ) : (
+          <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+            <span className="text-gray-400 text-xs">No Image</span>
+          </div>
+        );
+
+      case "category":
+        return asset.category?.category_name || asset.category_name || "-";
+
+      case "unit":
+        return asset.unit?.name || asset.unit_id || "-";
+
+      case "unit_price":
+        return asset.unit_price
+          ? `$${parseFloat(asset.unit_price).toFixed(2)}`
+          : "-";
+
+      case "asset_type":
+        const typeMap = {
+          asset: "Asset",
+          machine: "Machinery",
+          power_tools: "Power Tools",
+        };
+        return typeMap[asset.asset_type] || asset.asset_type || "-";
+
+      case "maintenance":
+        return asset.maintenance === "yes" ? "Yes" : "No";
+
+      case "specifications":
+        return asset.specifications ? (
+          <span
+            className="truncate max-w-[200px] inline-block"
+            title={asset.specifications}
+          >
+            {asset.specifications.length > 50
+              ? `${asset.specifications.substring(0, 50)}...`
+              : asset.specifications}
+          </span>
+        ) : (
+          "-"
+        );
+
+      case "manufacturer_name":
+        return asset.manufacturer_name || "-";
+
+      case "vendor_name":
+        return asset.vendor?.vendor_name || asset.vendor_name || "-";
+
+      case "status":
+        return asset.is_active ? "Active" : "Inactive";
+
+      case "created_at":
+        return asset.created_at
+          ? new Date(asset.created_at).toLocaleDateString()
+          : "-";
+
+      default:
+        return asset[columnKey] || "-";
+    }
+  };
+
+  // Column settings modal
+  const ColumnSettingsModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Column Settings
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Choose which columns to display in the table
+            </p>
+          </div>
+          <button
+            onClick={() => setShowColumnSettings(false)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {columns.map((column) => (
+              <div
+                key={column.key}
+                className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
+                  visibleColumns[column.key]
+                    ? "bg-blue-50 border-blue-200"
+                    : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                }`}
+                onClick={() => toggleColumnVisibility(column.key)}
+              >
+                <Checkbox
+                  checked={visibleColumns[column.key]}
+                  onCheckedChange={() => toggleColumnVisibility(column.key)}
+                />
+                <div className="flex items-center gap-2 flex-1">
+                  {visibleColumns[column.key] ? (
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className="text-sm font-medium text-gray-700">
+                    {column.label}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex gap-2">
+            <Button
+              onClick={resetColumnVisibility}
+              variant="success"
+              className="border-gray-300 hover:bg-gray-100"
+            >
+              Reset to Default
+            </Button>
+            <Button
+              onClick={showAllColumns}
+              variant="success"
+              className="border-gray-300 hover:bg-gray-100"
+            >
+              Show All
+            </Button>
+          </div>
+          <Button
+            variant="success"
+            onClick={() => setShowColumnSettings(false)}
+            className="bg-primary-color hover:bg-success-700 text-white"
+          >
+            Apply Changes
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="h-full">
-          <div className="max-w-7xl mx-auto">
+    <div className="flex h-full min-h-screen bg-white">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="max-w-full mx-auto">
+            {/* Header */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -362,108 +536,95 @@ const AssetIndex = () => {
                   <Button
                     onClick={handleExport}
                     variant="success"
-                    className="text-white flex items-center"
+                    className="flex items-center gap-2 "
                   >
                     <Download className="w-4 h-4" />
                     Export ({recordsInfo})
                   </Button>
                   <Button
-                    onClick={() => navigate("/assets/add")}
                     variant="success"
-                    className="text-white flex items-center"
+                    onClick={() => navigate("/assets/add")}
+                    className=" text-white flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
                     Add Asset
                   </Button>
                 </div>
-
-                {selectedAssets.size > 0 && (
-                  <Button
-                    onClick={handleDeleteSelected}
-                    className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 shadow-sm"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Selected ({selectedAssets.size})
-                  </Button>
-                )}
               </div>
             </div>
 
-            <Card className="shadow-sm border border-gray-200 bg-white">
-              <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-gray-100">
-                {/* Search and Filters Row */}
-                <div className="flex flex-col sm:flex-row gap-3 w-full">
-                  {/* Left Side - Search */}
-                  <div className="w-full sm:w-64">
+            {/* Search and Filters */}
+            <Card className="shadow-sm border border-gray-200 bg-white mb-6">
+              <CardContent className="p-4">
+                <div className="flex flex-col lg:flex-row gap-4 items-center">
+                  {/* Search */}
+                  <div className="flex-1">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         type="text"
-                        placeholder="Search assets..."
+                        placeholder="Search assets by name, code, or model..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 focus:ring-green-500 focus:border-green-500"
+                        className="w-full pl-10 pr-4 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   </div>
 
-                  {/* Center - Filters */}
-                  <div className="flex flex-col sm:flex-row gap-2 flex-1">
-                    <div className="w-full sm:w-40">
-                      <Select
-                        options={[
-                          { value: "", label: "All Types" },
-                          ...typeOptions,
-                        ]}
-                        value={currentTypeValue}
-                        onChange={(selectedOption) =>
-                          handleFilterChange("type_id", selectedOption)
-                        }
-                        placeholder="Type"
-                        styles={customStyles}
-                        isSearchable
-                        isClearable
-                      />
+                  {/* Filters Row */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Asset Type Filter */}
+                    <div className="relative group">
+                      <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md bg-white">
+                        <Filter className="w-4 h-4 text-gray-500" />
+                        <select
+                          value={filters.asset_type}
+                          onChange={(e) =>
+                            handleFilterChange("asset_type", e.target.value)
+                          }
+                          className="bg-transparent border-none focus:outline-none focus:ring-0 text-sm"
+                        >
+                          {assetTypeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
-                    <div className="w-full sm:w-48">
-                      <Select
-                        options={[
-                          { value: "", label: "All Items" },
-                          ...inventoryItemOptions,
-                        ]}
-                        value={currentInventoryValue}
-                        onChange={(selectedOption) =>
-                          handleFilterChange(
-                            "inventory_item_id",
-                            selectedOption
+                    {/* Records Per Page */}
+                    <div className="relative">
+                      <select
+                        value={pageSize}
+                        onChange={(e) =>
+                          setPageSize(
+                            e.target.value === "all"
+                              ? "all"
+                              : Number(e.target.value)
                           )
                         }
-                        placeholder="Inventory Item"
-                        styles={customStyles}
-                        isSearchable
-                        isClearable
-                      />
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      >
+                        {pageSizeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="w-full sm:w-40">
-                      <Select
-                        options={statusOptions}
-                        value={currentStatusValue}
-                        onChange={(selectedOption) =>
-                          handleFilterChange("status", selectedOption)
-                        }
-                        placeholder="Status"
-                        styles={customStyles}
-                        isSearchable
-                        isClearable
-                      />
-                    </div>
+                    {/* Column Settings Button */}
+                    <Button
+                      onClick={() => setShowColumnSettings(true)}
+                      variant="success"
+                      className="flex items-center gap-2 "
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span className="hidden sm:inline">Columns</span>
+                    </Button>
 
-                    {(filters.type_id ||
-                      filters.inventory_item_id ||
-                      filters.status ||
-                      search) && (
+                    {(filters.asset_type || search) && (
                       <Button
                         onClick={clearFilters}
                         variant="outline"
@@ -473,29 +634,27 @@ const AssetIndex = () => {
                       </Button>
                     )}
                   </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  {/* Right Side - Page Size */}
-                  <div className="w-full sm:w-40">
-                    <Select
-                      options={pageSizeOptions}
-                      value={currentPageSizeValue}
-                      onChange={(selectedOption) =>
-                        setPageSize(
-                          selectedOption.value === "all"
-                            ? "all"
-                            : Number(selectedOption.value)
-                        )
-                      }
-                      styles={customStyles}
-                    />
-                  </div>
+            {/* Table Card */}
+            <Card className="shadow-sm border border-gray-200 bg-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-gray-100">
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Asset List
+                </CardTitle>
+
+                {/* Row Count Info */}
+                <div className="text-sm text-gray-600">
+                  {assets.length} of {totalRecords} assets
                 </div>
               </CardHeader>
 
               <CardContent className="p-0">
                 {loading ? (
                   <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-color"></div>
                   </div>
                 ) : (
                   <>
@@ -503,7 +662,7 @@ const AssetIndex = () => {
                       <Table className="min-w-full">
                         <TableHeader className="bg-gray-50">
                           <TableRow>
-                            <TableHead className="w-12 py-3">
+                            <TableHead className="w-12 py-3 px-4">
                               <Checkbox
                                 checked={
                                   isAllSelected ||
@@ -513,16 +672,27 @@ const AssetIndex = () => {
                                 onCheckedChange={handleSelectAll}
                               />
                             </TableHead>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Asset Tag</TableHead>
-                            <TableHead>Item No</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Depreciation</TableHead>
-                            <TableHead>Useful Life</TableHead>
-                            <TableHead>Maintenance</TableHead>
-                            <TableHead className="text-right">
+                            {getVisibleColumns().map((column) => (
+                              <TableHead
+                                key={column.key}
+                                className="py-3 px-4 text-left"
+                              >
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-gray-700">
+                                    {column.label}
+                                  </span>
+                                  {column.sortable && (
+                                    <button
+                                      onClick={() => handleSort(column.key)}
+                                      className="ml-1 text-gray-400 hover:text-gray-600"
+                                    >
+                                      <ArrowUpDown className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              </TableHead>
+                            ))}
+                            <TableHead className="py-3 px-4 text-right">
                               Actions
                             </TableHead>
                           </TableRow>
@@ -534,7 +704,7 @@ const AssetIndex = () => {
                                 key={asset.id}
                                 className="hover:bg-gray-50 transition-colors border-b border-gray-100"
                               >
-                                <TableCell className="py-3">
+                                <TableCell className="py-3 px-4">
                                   <Checkbox
                                     checked={selectedAssets.has(asset.id)}
                                     onCheckedChange={() =>
@@ -542,43 +712,15 @@ const AssetIndex = () => {
                                     }
                                   />
                                 </TableCell>
-                                <TableCell className="py-3 font-medium text-gray-900">
-                                  {asset.id}
-                                </TableCell>
-                                <TableCell className="py-3">
-                                  {asset.tag_prefix}-
-                                  {String(asset.serial_number).padStart(4, "0")}
-                                </TableCell>
-                                <TableCell className="py-3 text-gray-700">
-                                  {asset.item_number}
-                                </TableCell>
-                                <TableCell className="py-3 font-medium text-gray-900">
-                                  {asset.item_name}
-                                </TableCell>
-                                <TableCell className="py-3 text-gray-600 max-w-xs truncate">
-                                  {asset.description}
-                                </TableCell>
-                                <TableCell className="py-3 text-gray-700">
-                                  {asset.type_id}
-                                </TableCell>
-                                <TableCell className="py-3 text-gray-700">
-                                  {asset.depreciation}%
-                                </TableCell>
-                                <TableCell className="py-3 text-gray-700">
-                                  {asset.useful_life} years
-                                </TableCell>
-                                <TableCell className="py-3">
-                                  <span
-                                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                      asset.maintenance
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-green-100 text-green-800"
-                                    }`}
+                                {getVisibleColumns().map((column) => (
+                                  <TableCell
+                                    key={column.key}
+                                    className="py-3 px-4 text-sm"
                                   >
-                                    {asset.maintenance ? "Yes" : "No"}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="py-3 text-right">
+                                    {getDisplayValue(asset, column.key)}
+                                  </TableCell>
+                                ))}
+                                <TableCell className="py-3 px-4 text-right">
                                   <ActionDropdown asset={asset} />
                                 </TableCell>
                               </TableRow>
@@ -586,10 +728,29 @@ const AssetIndex = () => {
                           ) : (
                             <TableRow>
                               <TableCell
-                                colSpan={11}
-                                className="text-center py-8 text-gray-500"
+                                colSpan={getVisibleColumns().length + 2}
+                                className="text-center py-12 text-gray-500"
                               >
-                                No assets found
+                                <div className="flex flex-col items-center justify-center">
+                                  <div className="text-4xl mb-2">📦</div>
+                                  <p className="text-lg font-medium mb-2">
+                                    No assets found
+                                  </p>
+                                  <p className="text-sm text-gray-600 mb-4">
+                                    {search || filters.asset_type
+                                      ? "Try adjusting your search or filters"
+                                      : "Add your first asset to get started"}
+                                  </p>
+                                  {!search && !filters.asset_type && (
+                                    <Button
+                                      onClick={() => navigate("/assets/add")}
+                                      className="bg-primary-color hover:bg-blue-700 text-white"
+                                    >
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      Add Asset
+                                    </Button>
+                                  )}
+                                </div>
                               </TableCell>
                             </TableRow>
                           )}
@@ -597,6 +758,7 @@ const AssetIndex = () => {
                       </Table>
                     </div>
 
+                    {/* Enhanced Pagination */}
                     {meta && meta.last_page > 1 && (
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-gray-50">
                         <div className="text-sm text-gray-600">
@@ -604,50 +766,40 @@ const AssetIndex = () => {
                           of {meta.total || assets.length} assets
                         </div>
 
-                        {/* Enhanced Pagination */}
                         <div className="flex items-center gap-2">
+                          {/* First Page */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchAssets(1)}
+                            disabled={meta.current_page === 1}
+                            className="h-9 w-9 p-0 disabled:opacity-50 disabled:cursor-not-allowed border-gray-300 hover:bg-blue-50"
+                            title="First Page"
+                          >
+                            <ChevronsLeft className="w-4 h-4" />
+                          </Button>
+
                           {/* Previous Page */}
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => fetchAssets(meta.current_page - 1)}
                             disabled={!meta.prev_page_url}
-                            className="h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed border-gray-300 hover:bg-green-50 flex items-center gap-1"
+                            className="h-9 w-9 p-0 disabled:opacity-50 disabled:cursor-not-allowed border-gray-300 hover:bg-blue-50"
+                            title="Previous Page"
                           >
                             <ChevronLeft className="w-4 h-4" />
-                            <span className="hidden sm:inline">Prev</span>
                           </Button>
 
-                          {/* Page Numbers */}
-                          <div className="flex items-center gap-1">
-                            {generatePageNumbers().map((pageNum, index) =>
-                              pageNum === "..." ? (
-                                <span
-                                  key={`ellipsis-${index}`}
-                                  className="px-2 text-gray-500"
-                                >
-                                  ...
-                                </span>
-                              ) : (
-                                <Button
-                                  key={pageNum}
-                                  variant={
-                                    pageNum === meta.current_page
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  onClick={() => fetchAssets(pageNum)}
-                                  className={`h-9 w-9 p-0 font-medium ${
-                                    pageNum === meta.current_page
-                                      ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
-                                      : "border-gray-300 hover:bg-green-50 text-gray-700"
-                                  }`}
-                                >
-                                  {pageNum}
-                                </Button>
-                              )
-                            )}
+                          {/* Current Page Info */}
+                          <div className="flex items-center gap-2 px-3 py-1 bg-white border border-gray-300 rounded-md">
+                            <span className="text-sm text-gray-600">Page</span>
+                            <span className="font-semibold text-primary-color">
+                              {meta.current_page}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              of {meta.last_page}
+                            </span>
                           </div>
 
                           {/* Next Page */}
@@ -656,22 +808,23 @@ const AssetIndex = () => {
                             size="sm"
                             onClick={() => fetchAssets(meta.current_page + 1)}
                             disabled={!meta.next_page_url}
-                            className="h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed border-gray-300 hover:bg-green-50 flex items-center gap-1"
+                            className="h-9 w-9 p-0 disabled:opacity-50 disabled:cursor-not-allowed border-gray-300 hover:bg-blue-50"
+                            title="Next Page"
                           >
-                            <span className="hidden sm:inline">Next</span>
                             <ChevronRight className="w-4 h-4" />
                           </Button>
 
-                          {/* Page Info */}
-                          <div className="hidden md:flex items-center gap-2 ml-4 px-3 py-1 bg-white border border-gray-300 rounded-md">
-                            <span className="text-sm text-gray-600">Page</span>
-                            <span className="font-semibold text-green-600">
-                              {meta.current_page}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              of {meta.last_page}
-                            </span>
-                          </div>
+                          {/* Last Page */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchAssets(meta.last_page)}
+                            disabled={meta.current_page === meta.last_page}
+                            className="h-9 w-9 p-0 disabled:opacity-50 disabled:cursor-not-allowed border-gray-300 hover:bg-blue-50"
+                            title="Last Page"
+                          >
+                            <ChevronsRight className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -680,6 +833,11 @@ const AssetIndex = () => {
               </CardContent>
             </Card>
           </div>
+        </main>
+      </div>
+
+      {/* Column Settings Modal */}
+      {showColumnSettings && <ColumnSettingsModal />}
     </div>
   );
 };

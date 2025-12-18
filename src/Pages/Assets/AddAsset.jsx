@@ -16,53 +16,149 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@radix-ui/themes";
 import { toast } from "react-toastify";
-import assetAPI from "@/lib/assetApi";
-import ItemtypeAPI from "@/lib/ItemtypeAPI"; // Your item types API
-import inventoryItemAPI from "@/lib/InventoryItemApi"; // Your inventory items API
-import { ArrowLeft, Upload, Image as ImageIcon, X } from "lucide-react";
+import assetAPI from "@/lib/assetAPI";
+import inventoryItemAPI from "@/lib/inventoryItemAPI";
+import unitApi from "@/lib/unitApi";
+import categoryAPI from "@/lib/categoryAPI";
+import accountAPI from "@/lib/accountAPI";
+import vendorAPI from "@/lib/vendorAPI";
+import CategoryDropdown from "./CategoryDropdown";
+import {
+  ArrowLeft,
+  Upload,
+  Image as ImageIcon,
+  X,
+  Package,
+  Scale,
+  DollarSign,
+  Tag,
+  Settings,
+  Link2,
+  FileText,
+  Info,
+  Loader2,
+} from "lucide-react";
 import Select from "react-select";
 
 const AddAsset = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
-  const [types, setTypes] = useState([]);
+  const [files, setFiles] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
+  const [uomList, setUomList] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [documents, setDocuments] = useState([]);
 
   const [formData, setFormData] = useState({
-    item_number: "",
+    // General Asset Details
+
     item_name: "",
+    model_no: "",
+    unit_id: "",
+    category_id: "",
+    category_name: "",
+    manufacturer_name: "",
+    specification: "",
+
+    // Physical Details
+    weight_value: "",
+    weight_unit: "kg",
+    length: "",
+    length_unit: "cm",
+    width: "",
+    width_unit: "cm",
+    height: "",
+    height_unit: "cm",
+
+    // Financial & Vendor Details
+    unit_price: "",
+    account_id: "",
+    vendor_id: "",
+
+    // Asset Type & Settings
+    asset_type: "asset",
+    maintenance: "no",
+    tag_type: false,
     tag_prefix: "",
-    type_id: "",
-    inventory_item_id: "",
-    depreciation: "",
-    useful_life: "",
-    maintenance: false,
-    description: "",
+    serialized: false, // Changed default to false
+
+    // Linked Inventory
+    linked_inventory_id: "",
+
+    // Remarks
     remarks: "",
+    image: null,
   });
 
   const [picture, setPicture] = useState(null);
-
   const navigate = useNavigate();
 
-  // Fetch dropdown data
+  // Asset Type options
+  const assetTypeOptions = [
+    { value: "asset", label: "Asset" },
+    { value: "machine", label: "Machinery" },
+    { value: "power_tools", label: "Power Tools" },
+  ];
+
+  // Maintenance options
+  const maintenanceOptions = [
+    { value: "no", label: "No" },
+    { value: "yes", label: "Yes" },
+    { value: "scheduled", label: "Scheduled" },
+  ];
+
+  // Weight unit options
+  const weightUnitOptions = [
+    { value: "kg", label: "kg" },
+    { value: "g", label: "g" },
+    { value: "ton", label: "ton" },
+    { value: "lb", label: "lb" },
+  ];
+
+  // Dimension unit options
+  const dimensionUnitOptions = [
+    { value: "cm", label: "cm" },
+    { value: "mm", label: "mm" },
+    { value: "m", label: "m" },
+  ];
+
+  // Fetch all dropdown data
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const [typesRes, inventoryRes] = await Promise.all([
-          ItemtypeAPI.getAll(),
-          inventoryItemAPI.getAll(),
-        ]);
+        setFetchingData(true);
 
-        console.log("Types response:", typesRes);
-        console.log("Inventory items response:", inventoryRes);
+        const [inventoryRes, uomRes, categoriesRes, accountsRes, vendorsRes] =
+          await Promise.all([
+            inventoryItemAPI.getAll(),
+            unitApi.getAll(),
+            categoryAPI.getAllCategories(),
+            accountAPI.getAll(),
+            vendorAPI.getAll(),
+          ]);
 
-        setTypes(typesRes || []);
+        console.log("API Responses:", {
+          inventory: inventoryRes,
+          uom: uomRes,
+          categories: categoriesRes,
+          accounts: accountsRes,
+          vendors: vendorsRes,
+        });
+
         setInventoryItems(inventoryRes || []);
+        setUomList(uomRes || []);
+        setCategories(categoriesRes || []);
+        setAccounts(accountsRes || []);
+        setVendors(vendorsRes || []);
       } catch (error) {
         console.error("Failed to fetch dropdown data:", error);
         toast.error("Failed to load form data");
+      } finally {
+        setFetchingData(false);
       }
     };
 
@@ -70,15 +166,164 @@ const AddAsset = () => {
   }, []);
 
   // Format data for react-select
-  const typeOptions = types.map((type) => ({
-    value: type.id.toString(),
-    label: type.type_name || type.name || `Type ${type.id}`,
-  }));
-
   const inventoryItemOptions = inventoryItems.map((item) => ({
     value: item.id.toString(),
-    label: `${item.item_code} - ${item.item_name}` || `Item ${item.id}`,
+    label: `${item.item_code || ""} - ${item.item_name || `Item ${item.id}`}`,
   }));
+
+  const uomOptions = uomList.map((uom) => ({
+    value: uom.id.toString(),
+    label: uom.name || uom.name || `UOM ${uom.id}`,
+  }));
+
+  const glAccountOptions = accounts.map((account) => ({
+    value: account.id.toString(),
+    label: `${account.account_code || ""} - ${
+      account.account_name || `Account ${account.id}`
+    }`,
+  }));
+
+  const vendorOptions = vendors.map((vendor) => ({
+    value: vendor.id.toString(),
+    label: vendor.vendor_name || vendor.name || `Vendor ${vendor.id}`,
+  }));
+
+  // Handle category selection
+  const handleCategorySelect = (category) => {
+    if (category) {
+      const categoryId = category.id || category._id;
+      const categoryName = category.category_name || category.name || "";
+
+      setFormData((prev) => ({
+        ...prev,
+        category_id: categoryId.toString(),
+        category_name: categoryName,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        category_id: "",
+        category_name: "",
+      }));
+    }
+  };
+
+  // Get selected category object for display
+  const getSelectedCategory = () => {
+    if (!formData.category_id) return null;
+
+    // Function to find category in nested structure
+    const findCategory = (categories, id) => {
+      for (const category of categories) {
+        if (!category) continue;
+
+        if (
+          (category.id && category.id.toString() === id) ||
+          (category._id && category._id.toString() === id)
+        ) {
+          return category;
+        }
+
+        // Check children if available
+        const children = category.children || category.subcategories || [];
+        if (children.length > 0) {
+          const found = findCategory(children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return findCategory(categories, formData.category_id);
+  };
+
+  // Handle asset type change for tag prefix
+  // Handle asset type change and tag prefix generation
+  useEffect(() => {
+    const generateTagPrefix = () => {
+      const { asset_type, item_name, tag_prefix, tag_type } = formData;
+
+      // For asset type: only generate if tag_type is checked/enabled
+      if (asset_type === "asset") {
+        if (!tag_type) {
+          // Clear tag prefix when tag_type is unchecked
+          if (tag_prefix && tag_prefix.trim() !== "") {
+            setFormData((prev) => ({
+              ...prev,
+              tag_prefix: "",
+            }));
+          }
+          return; // Don't generate anything
+        }
+
+        // Only generate if tag_type is enabled for assets
+        if (item_name && item_name.length >= 3) {
+          const newPrefix = item_name.substring(0, 3).toUpperCase();
+          // Don't auto-generate if user has manually modified
+          if (!tag_prefix || tag_prefix === "GL-" || newPrefix !== tag_prefix) {
+            if (tag_prefix !== newPrefix) {
+              setFormData((prev) => ({
+                ...prev,
+                tag_prefix: newPrefix,
+              }));
+            }
+          }
+        } else if (
+          tag_prefix &&
+          tag_prefix.trim() !== "" &&
+          tag_prefix !== "GL-"
+        ) {
+          // Keep user input if less than 3 chars but user typed something
+        } else {
+          // Clear if no name and no user input
+          setFormData((prev) => ({
+            ...prev,
+            tag_prefix: "",
+          }));
+        }
+        return;
+      }
+
+      // For machine and power_tools (existing logic)
+      // Don't auto-generate if user has manually modified tag prefix
+      if (tag_prefix && tag_prefix.trim() !== "" && tag_prefix !== "GL-")
+        return;
+
+      let newPrefix = "";
+
+      switch (asset_type) {
+        case "machine":
+          if (item_name && item_name.length >= 4) {
+            newPrefix = item_name.substring(0, 4).toUpperCase();
+          }
+          break;
+        case "power_tools":
+          newPrefix = "";
+          break;
+        default:
+          newPrefix = "";
+      }
+
+      if (newPrefix !== tag_prefix) {
+        setFormData((prev) => ({
+          ...prev,
+          tag_prefix: newPrefix,
+        }));
+      }
+
+      // Auto-check tag type for Machinery and Power Tools
+      if (asset_type === "machine" || asset_type === "power_tools") {
+        if (!formData.tag_type) {
+          setFormData((prev) => ({
+            ...prev,
+            tag_type: 1,
+          }));
+        }
+      }
+    };
+
+    generateTagPrefix();
+  }, [formData.asset_type, formData.item_name, formData.tag_type]); // Added tag_type dependency
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -94,84 +339,167 @@ const AddAsset = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("File size must be less than 2MB");
+  const handleCheckboxChange = (field, checked) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: checked,
+    }));
+  };
+
+  const handleFileChange = (e, type) => {
+    const fileList = e.target.files;
+
+    if (type === "picture") {
+      const file = fileList[0];
+      if (file) {
+        if (file.size > 2 * 1024 * 1024) {
+          toast.error("File size must be less than 2MB");
+          return;
+        }
+
+        const validTypes = [
+          "image/jpeg",
+          "image/jpg",
+          "image/png",
+          "image/gif",
+          "image/svg+xml",
+        ];
+        if (!validTypes.includes(file.type)) {
+          toast.error("Select a valid image file (JPEG, PNG, GIF, SVG)");
+          return;
+        }
+
+        // Update formData and preview
+        setFormData((prev) => ({ ...prev, image: file }));
+        const reader = new FileReader();
+        reader.onload = (e) => setImagePreview(e.target.result);
+        reader.readAsDataURL(file);
+      }
+    } else if (type === "documents") {
+      const newFiles = Array.from(fileList);
+      const totalSize = newFiles.reduce((acc, file) => acc + file.size, 0);
+      if (totalSize > 5 * 1024 * 1024) {
+        toast.error("Total file size must be less than 5MB");
         return;
       }
-
-      const validTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/gif",
-        "image/svg+xml",
-      ];
-      if (!validTypes.includes(file.type)) {
-        toast.error("Select a valid image file (JPEG, PNG, GIF, SVG)");
-        return;
-      }
-
-      setPicture(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target.result);
-      reader.readAsDataURL(file);
+      setDocuments((prev) => [...prev, ...newFiles]);
     }
   };
 
   const removeImage = () => {
-    setPicture(null);
+    setFormData((prev) => ({ ...prev, image: null }));
     setImagePreview(null);
+  };
+
+  const removeDocument = (index) => {
+    setDocuments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
-    if (
-      !formData.item_number ||
-      !formData.item_name ||
-      !formData.tag_prefix ||
-      !formData.type_id
-    ) {
-      toast.error("Item Number, Item Name, Tag Prefix, and Type are required");
-      return;
-    }
-
-    if (!/^\d+$/.test(formData.item_number)) {
-      toast.error("Item Number must be numeric");
-      return;
-    }
-
-    if (!/^[A-Za-z]{2}$/.test(formData.tag_prefix)) {
-      toast.error("Tag Prefix must be exactly 2 letters");
+    // Basic validation
+    if (!formData.item_name || !formData.unit_id || !formData.category_id) {
+      toast.error(" Item Name, UOM, and Category are required");
       return;
     }
 
     const submitData = new FormData();
 
-    // Append all form data
-    Object.keys(formData).forEach((key) => {
-      if (key === "maintenance") {
-        submitData.append(key, formData[key] ? "1" : "0");
-      } else {
-        submitData.append(key, formData[key] || "");
-      }
-    });
+    // Map form data to backend fields
+
+    submitData.append("item_name", formData.item_name);
+    submitData.append("model_no", formData.model_no || "");
+    submitData.append("unit_id", parseInt(formData.unit_id));
+    submitData.append("category_id", parseInt(formData.category_id));
+    submitData.append("manufacturer_name", formData.manufacturer_name || "");
+    submitData.append("specification", formData.specification || "");
+
+    // Weight
+    if (formData.weight_value) {
+      submitData.append("weight", parseFloat(formData.weight_value));
+      submitData.append("weight_unit", formData.weight_unit || "kg");
+    } else {
+      submitData.append("weight", 0);
+      submitData.append("weight_unit", "kg");
+    }
+
+    // Dimensions object
+
+    if (formData.length) {
+      submitData.append(
+        "dimensions[length][value]",
+        parseFloat(formData.length)
+      );
+      submitData.append(
+        "dimensions[length][unit]",
+        formData.length_unit || "cm"
+      );
+    }
+    if (formData.width) {
+      submitData.append("dimensions[width][value]", parseFloat(formData.width));
+      submitData.append("dimensions[width][unit]", formData.width_unit || "cm");
+    }
+    if (formData.height) {
+      submitData.append(
+        "dimensions[height][value]",
+        parseFloat(formData.height)
+      );
+      submitData.append(
+        "dimensions[height][unit]",
+        formData.height_unit || "cm"
+      );
+    }
+
+    // Financial
+    submitData.append("unit_cost", parseFloat(formData.unit_price) || 0);
+
+    if (formData.account_id) {
+      submitData.append("account_id", parseInt(formData.account_id));
+    }
+
+    if (formData.vendor_id) {
+      submitData.append("vendor_id", parseInt(formData.vendor_id));
+    }
+
+    // Asset settings
+    submitData.append("asset_type", formData.asset_type || "asset");
+    submitData.append("maintenance", formData.maintenance || "no");
+    submitData.append("tag_type", formData.tag_type ? 1 : 0); // Changed: tag_type is independent
+    submitData.append("tag_prefix", formData.tag_prefix || "");
+    submitData.append("is_serialized", formData.serialized ? 1 : 0); // Serialization is independent
+    submitData.append("asset_tag", ""); // backend will generate
+    submitData.append("remarks", formData.remarks || "");
+    submitData.append("is_active", 1);
+    submitData.append("status", 1);
+    // Append picture if exists
+    if (formData.image) {
+      submitData.append("image", formData.image);
+    }
+
+    // Linked inventory
+    if (formData.linked_inventory_id) {
+      submitData.append(
+        "linked_inventory_id",
+        parseInt(formData.linked_inventory_id)
+      );
+    }
 
     // Append picture if exists
     if (picture) {
       submitData.append("picture", picture);
     }
 
+    // Append documents if exist
+    documents.forEach((doc, index) => {
+      submitData.append(`document_${index}`, doc);
+    });
+
     try {
       setLoading(true);
       const response = await assetAPI.create(submitData);
       toast.success("Asset created successfully!");
 
-      // Show the generated tag if available
       if (response.data?.tag) {
         toast.info(`Asset Tag: ${response.data.tag}`);
       }
@@ -181,7 +509,6 @@ const AddAsset = () => {
       console.error("Create asset error:", error);
 
       if (error.response?.data?.errors) {
-        // Handle validation errors
         const errors = error.response.data.errors;
         Object.values(errors)
           .flat()
@@ -203,10 +530,10 @@ const AddAsset = () => {
       height: "40px",
       minHeight: "40px",
       fontSize: "14px",
-      borderColor: state.isFocused ? "#16a34a" : "#d1d5db",
-      boxShadow: state.isFocused ? "0 0 0 1px #16a34a" : "none",
+      borderColor: state.isFocused ? "#3b82f6" : "#d1d5db",
+      boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
       "&:hover": {
-        borderColor: state.isFocused ? "#16a34a" : "#9ca3af",
+        borderColor: state.isFocused ? "#3b82f6" : "#9ca3af",
       },
     }),
     menu: (base) => ({
@@ -217,13 +544,13 @@ const AddAsset = () => {
     option: (base, state) => ({
       ...base,
       backgroundColor: state.isSelected
-        ? "#16a34a"
+        ? "#3b82f6"
         : state.isFocused
-        ? "#dcfce7"
+        ? "#eff6ff"
         : "white",
       color: state.isSelected ? "white" : "#1f2937",
       "&:active": {
-        backgroundColor: "#16a34a",
+        backgroundColor: "#3b82f6",
         color: "white",
       },
     }),
@@ -238,12 +565,12 @@ const AddAsset = () => {
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-white-50">
+    <div className="flex h-full min-h-screen bg-white">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden w-full">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="max-w-4xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-white">
+          <div className="max-w-full mx-auto">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -251,10 +578,10 @@ const AddAsset = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => navigate("/assets")}
-                  className="flex items-center gap-2 bg-white mb-4"
+                  className="flex items-center gap-2 bg-white border-gray-300 mb-4 hover:bg-gray-50"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back
+                  Back to Assets
                 </Button>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                   Add New Asset
@@ -265,335 +592,841 @@ const AddAsset = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Information */}
-              <Card className="shadow-sm border border-gray-200">
-                <CardHeader className="pb-4 border-b border-gray-100">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Basic Information
-                  </CardTitle>
-                  <CardDescription>
-                    Essential details about the asset
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="item_number"
-                        className="text-sm font-medium"
-                      >
-                        Item Number *
-                      </Label>
-                      <Input
-                        id="item_number"
-                        type="text"
-                        value={formData.item_number}
-                        onChange={(e) =>
-                          handleInputChange("item_number", e.target.value)
-                        }
-                        placeholder="e.g., 1001"
-                        required
-                        pattern="[0-9]*"
-                        className="focus:ring-green-500 focus:border-green-500"
-                      />
-                      <p className="text-xs text-gray-500">
-                        Numeric value only
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="item_name"
-                        className="text-sm font-medium"
-                      >
-                        Item Name *
-                      </Label>
-                      <Input
-                        id="item_name"
-                        type="text"
-                        value={formData.item_name}
-                        onChange={(e) =>
-                          handleInputChange("item_name", e.target.value)
-                        }
-                        placeholder="e.g., Laptop Dell XPS 13"
-                        required
-                        className="focus:ring-green-500 focus:border-green-500"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="tag_prefix"
-                        className="text-sm font-medium"
-                      >
-                        Tag Prefix *
-                      </Label>
-                      <Input
-                        id="tag_prefix"
-                        type="text"
-                        value={formData.tag_prefix}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "tag_prefix",
-                            e.target.value.toUpperCase()
-                          )
-                        }
-                        placeholder="e.g., LT"
-                        required
-                        maxLength={2}
-                        className="uppercase focus:ring-green-500 focus:border-green-500"
-                      />
-                      <p className="text-xs text-gray-500">
-                        Exactly 2 letters (e.g., LT for Laptop)
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="type_id" className="text-sm font-medium">
-                        Type *
-                      </Label>
-                      <Select
-                        options={typeOptions}
-                        value={
-                          typeOptions.find(
-                            (option) => option.value === formData.type_id
-                          ) || null
-                        }
-                        onChange={(selectedOption) =>
-                          handleSelectChange("type_id", selectedOption)
-                        }
-                        placeholder="Select type"
-                        styles={customStyles}
-                        isSearchable
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="description"
-                      className="text-sm font-medium"
-                    >
-                      Description
-                    </Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange("description", e.target.value)
-                      }
-                      placeholder="Detailed description of the asset..."
-                      rows={3}
-                      className="focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Financial & Additional Information */}
-              <Card className="shadow-sm border border-gray-200">
-                <CardHeader className="pb-4 border-b border-gray-100">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Financial & Additional Information
-                  </CardTitle>
-                  <CardDescription>
-                    Depreciation and maintenance details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="inventory_item_id"
-                        className="text-sm font-medium"
-                      >
-                        Inventory Item
-                      </Label>
-                      <Select
-                        options={inventoryItemOptions}
-                        value={
-                          inventoryItemOptions.find(
-                            (option) =>
-                              option.value === formData.inventory_item_id
-                          ) || null
-                        }
-                        onChange={(selectedOption) =>
-                          handleSelectChange(
-                            "inventory_item_id",
-                            selectedOption
-                          )
-                        }
-                        placeholder="Select inventory item"
-                        styles={customStyles}
-                        isSearchable
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="depreciation"
-                        className="text-sm font-medium"
-                      >
-                        Depreciation Rate (%)
-                      </Label>
-                      <Input
-                        id="depreciation"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={formData.depreciation}
-                        onChange={(e) =>
-                          handleInputChange("depreciation", e.target.value)
-                        }
-                        placeholder="e.g., 10.5"
-                        className="focus:ring-green-500 focus:border-green-500"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="useful_life"
-                        className="text-sm font-medium"
-                      >
-                        Useful Life (Years)
-                      </Label>
-                      <Input
-                        id="useful_life"
-                        type="number"
-                        min="0"
-                        value={formData.useful_life}
-                        onChange={(e) =>
-                          handleInputChange("useful_life", e.target.value)
-                        }
-                        placeholder="e.g., 5"
-                        className="focus:ring-green-500 focus:border-green-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Checkbox
-                      id="maintenance"
-                      checked={formData.maintenance}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("maintenance", checked)
-                      }
-                    />
-                    <Label
-                      htmlFor="maintenance"
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      Requires Maintenance
-                    </Label>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Asset Picture */}
-              <Card className="shadow-sm border border-gray-200">
-                <CardHeader className="pb-4 border-b border-gray-100">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Asset Picture
-                  </CardTitle>
-                  <CardDescription>
-                    Upload a picture of the asset (JPEG, PNG, GIF, SVG - Max
-                    2MB)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {imagePreview ? (
-                    <div className="space-y-3">
-                      <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4">
-                        <img
-                          src={imagePreview}
-                          alt="Asset preview"
-                          className="w-full h-48 object-contain rounded-md"
-                        />
-                        <button
-                          type="button"
-                          onClick={removeImage}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors bg-gray-50">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <ImageIcon className="w-12 h-12 text-gray-400 mb-3" />
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Click to upload</span>
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          JPEG, PNG, GIF, SVG (MAX. 2MB)
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/jpeg,image/jpg,image/png,image/gif,image/svg+xml"
-                        onChange={handleFileChange}
-                      />
-                    </label>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Remarks */}
-              <Card className="shadow-sm border border-gray-200">
-                <CardHeader className="pb-4 border-b border-gray-100">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Remarks
-                  </CardTitle>
-                  <CardDescription>
-                    Additional notes or comments about the asset
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <Textarea
-                    value={formData.remarks}
-                    onChange={(e) =>
-                      handleInputChange("remarks", e.target.value)
-                    }
-                    placeholder="Any additional remarks or comments..."
-                    rows={4}
-                    className="focus:ring-green-500 focus:border-green-500"
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Actions */}
-              <div className="flex gap-3 justify-end pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/assets")}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-8"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 flex items-center gap-2"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Create Asset
-                    </>
-                  )}
-                </Button>
+            {fetchingData ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+                  <p className="text-gray-600">Loading form data...</p>
+                </div>
               </div>
-            </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* 1. General Asset Details */}
+                <Card className="shadow-sm border border-gray-200 bg-white">
+                  <CardHeader className="pb-4 border-b border-gray-100">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Package className="w-5 h-5" />
+                      1. General Asset Details
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Essential information about the asset
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="item_name"
+                          className="text-sm font-medium flex items-center gap-1"
+                        >
+                          Name <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="item_name"
+                          type="text"
+                          value={formData.item_name}
+                          onChange={(e) =>
+                            handleInputChange("item_name", e.target.value)
+                          }
+                          placeholder="Asset Name"
+                          required
+                          className="w-full focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="model_no"
+                          className="text-sm font-medium"
+                        >
+                          Model Number
+                        </Label>
+                        <Input
+                          id="model_no"
+                          type="text"
+                          value={formData.model_no}
+                          onChange={(e) =>
+                            handleInputChange("model_no", e.target.value)
+                          }
+                          placeholder="e.g., Makita DGA504"
+                          className="w-full focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="unit_id"
+                          className="text-sm font-medium flex items-center gap-1"
+                        >
+                          UOM (Unit of Measurement){" "}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          options={uomOptions}
+                          value={
+                            uomOptions.find(
+                              (option) => option.value === formData.unit_id
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            handleSelectChange("unit_id", selectedOption)
+                          }
+                          placeholder="Select UOM"
+                          styles={customStyles}
+                          isSearchable
+                          required
+                          className="w-full"
+                          isLoading={fetchingData}
+                        />
+                        {uomOptions.length === 0 && !fetchingData && (
+                          <p className="text-xs text-yellow-600">
+                            No UOM options available
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="category_id"
+                          className="text-sm font-medium flex items-center gap-1"
+                        >
+                          Category <span className="text-red-500">*</span>
+                        </Label>
+                        <CategoryDropdown
+                          selectedCategory={getSelectedCategory()}
+                          onCategorySelect={handleCategorySelect}
+                          leafCategories={true}
+                        />
+                        {formData.category_name && (
+                          <p className="text-xs text-gray-600 mt-1">
+                            Selected:{" "}
+                            <span className="font-medium">
+                              {formData.category_name}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="manufacturer_name"
+                          className="text-sm font-medium"
+                        >
+                          Manufacturer
+                        </Label>
+                        <Input
+                          id="manufacturer_name"
+                          type="text"
+                          value={formData.manufacturer_name}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "manufacturer_name",
+                              e.target.value
+                            )
+                          }
+                          placeholder="e.g., Bosch, Makita, Dell"
+                          className="w-full focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <Label
+                        htmlFor="specification"
+                        className="text-sm font-medium flex items-center gap-1"
+                      >
+                        Specifications <span className="text-red-500">*</span>
+                      </Label>
+                      <Textarea
+                        id="specification"
+                        value={formData.specification}
+                        onChange={(e) =>
+                          handleInputChange("specification", e.target.value)
+                        }
+                        placeholder="Enter detailed specifications..."
+                        rows={3}
+                        required
+                        className="w-full focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 2. Physical Details */}
+                <Card className="shadow-sm border border-gray-200 bg-white">
+                  <CardHeader className="pb-4 border-b border-gray-100">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Scale className="w-5 h-5" />
+                      2. Physical Details
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Dimensions and weight information
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="weight_value"
+                          className="text-sm font-medium"
+                        >
+                          Weight
+                        </Label>
+                        <div className="flex gap-2 w-full">
+                          <Input
+                            id="weight_value"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={formData.weight_value}
+                            onChange={(e) =>
+                              handleInputChange("weight_value", e.target.value)
+                            }
+                            placeholder="e.g., 5.5"
+                            className="flex-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <Select
+                            options={weightUnitOptions}
+                            value={
+                              weightUnitOptions.find(
+                                (option) =>
+                                  option.value === formData.weight_unit
+                              ) || null
+                            }
+                            onChange={(selectedOption) =>
+                              handleSelectChange("weight_unit", selectedOption)
+                            }
+                            styles={customStyles}
+                            className="w-32"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="length" className="text-sm font-medium">
+                          Length
+                        </Label>
+                        <div className="flex gap-2 w-full">
+                          <Input
+                            id="length"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={formData.length}
+                            onChange={(e) =>
+                              handleInputChange("length", e.target.value)
+                            }
+                            placeholder="Length"
+                            className="flex-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <Select
+                            options={dimensionUnitOptions}
+                            value={
+                              dimensionUnitOptions.find(
+                                (option) =>
+                                  option.value === formData.length_unit
+                              ) || null
+                            }
+                            onChange={(selectedOption) =>
+                              handleSelectChange("length_unit", selectedOption)
+                            }
+                            styles={customStyles}
+                            className="w-32"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="width" className="text-sm font-medium">
+                          Width
+                        </Label>
+                        <div className="flex gap-2 w-full">
+                          <Input
+                            id="width"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={formData.width}
+                            onChange={(e) =>
+                              handleInputChange("width", e.target.value)
+                            }
+                            placeholder="Width"
+                            className="flex-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <Select
+                            options={dimensionUnitOptions}
+                            value={
+                              dimensionUnitOptions.find(
+                                (option) => option.value === formData.width_unit
+                              ) || null
+                            }
+                            onChange={(selectedOption) =>
+                              handleSelectChange("width_unit", selectedOption)
+                            }
+                            styles={customStyles}
+                            className="w-32"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="height" className="text-sm font-medium">
+                          Height
+                        </Label>
+                        <div className="flex gap-2 w-full">
+                          <Input
+                            id="height"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={formData.height}
+                            onChange={(e) =>
+                              handleInputChange("height", e.target.value)
+                            }
+                            placeholder="Height"
+                            className="flex-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <Select
+                            options={dimensionUnitOptions}
+                            value={
+                              dimensionUnitOptions.find(
+                                (option) =>
+                                  option.value === formData.height_unit
+                              ) || null
+                            }
+                            onChange={(selectedOption) =>
+                              handleSelectChange("height_unit", selectedOption)
+                            }
+                            styles={customStyles}
+                            className="w-32"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 3. Financial & Vendor Details */}
+                <Card className="shadow-sm border border-gray-200 bg-white">
+                  <CardHeader className="pb-4 border-b border-gray-100">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      3. Financial & Vendor Details
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Pricing and supplier information
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="unit_price"
+                          className="text-sm font-medium flex items-center gap-1"
+                        >
+                          Unit Price <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="unit_price"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.unit_price}
+                          onChange={(e) =>
+                            handleInputChange("unit_price", e.target.value)
+                          }
+                          placeholder="e.g., 1500.00"
+                          required
+                          className="w-full focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Numeric value only (no currency symbol)
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="account_id"
+                          className="text-sm font-medium flex items-center gap-1"
+                        >
+                          GL / Expense Account{" "}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          options={glAccountOptions}
+                          value={
+                            glAccountOptions.find(
+                              (option) => option.value === formData.account_id
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            handleSelectChange("account_id", selectedOption)
+                          }
+                          placeholder="Select Account"
+                          styles={customStyles}
+                          isSearchable
+                          required
+                          className="w-full"
+                          isLoading={fetchingData}
+                        />
+                        {glAccountOptions.length === 0 && !fetchingData && (
+                          <p className="text-xs text-yellow-600">
+                            No GL accounts available
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="vendor_id"
+                          className="text-sm font-medium"
+                        >
+                          Vendor
+                        </Label>
+                        <Select
+                          options={vendorOptions}
+                          value={
+                            vendorOptions.find(
+                              (option) => option.value === formData.vendor_id
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            handleSelectChange("vendor_id", selectedOption)
+                          }
+                          placeholder="Select Vendor"
+                          styles={customStyles}
+                          isSearchable
+                          className="w-full"
+                          isLoading={fetchingData}
+                        />
+                        {vendorOptions.length === 0 && !fetchingData && (
+                          <p className="text-xs text-yellow-600">
+                            No vendors available
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Serialized Check in Sales Column Section */}
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-sm font-medium">
+                            Serialization Status
+                          </Label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Enable if this asset requires unique serial numbers
+                            for tracking
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="serialized_sales"
+                            checked={formData.serialized}
+                            onCheckedChange={(checked) =>
+                              handleCheckboxChange("serialized", checked)
+                            }
+                          />
+                          <Label
+                            htmlFor="serialized_sales"
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Is Serialized Asset
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 4. Asset Type & Settings */}
+                <Card className="shadow-sm border border-gray-200 bg-white">
+                  <CardHeader className="pb-4 border-b border-gray-100">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      4. Asset Type & Settings
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Asset classification and settings
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="asset_type"
+                          className="text-sm font-medium flex items-center gap-1"
+                        >
+                          Asset Type <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          options={assetTypeOptions}
+                          value={
+                            assetTypeOptions.find(
+                              (option) => option.value === formData.asset_type
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            handleSelectChange("asset_type", selectedOption)
+                          }
+                          placeholder="Select Asset Type"
+                          styles={customStyles}
+                          isSearchable
+                          required
+                          className="w-full"
+                        />
+                        {(formData.asset_type === "power_tools" ||
+                          formData.asset_type === "machine") && (
+                          <div className="flex items-start gap-2 mt-2 p-2 bg-blue-50 rounded border border-blue-200">
+                            <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-blue-700">
+                              {formData.asset_type === "power_tools"
+                                ? 'Tag prefix will auto-fill to "GL-" for Power Tools'
+                                : "Tag type will be automatically enabled for Machinery"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="maintenance"
+                          className="text-sm font-medium flex items-center gap-1"
+                        >
+                          Maintenance <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          options={maintenanceOptions}
+                          value={
+                            maintenanceOptions.find(
+                              (option) => option.value === formData.maintenance
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            handleSelectChange("maintenance", selectedOption)
+                          }
+                          placeholder="Select Maintenance"
+                          styles={customStyles}
+                          isSearchable
+                          required
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Tag Type</Label>
+                        <div className="flex items-center gap-2 pt-2">
+                          <Checkbox
+                            id="tag_type"
+                            checked={formData.tag_type}
+                            onCheckedChange={(checked) =>
+                              handleCheckboxChange("tag_type", checked)
+                            }
+                            disabled={
+                              formData.asset_type === "machine" ||
+                              formData.asset_type === "power_tools"
+                            }
+                          />
+                          <Label
+                            htmlFor="tag_type"
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Enable Tag
+                            {(formData.asset_type === "machine" ||
+                              formData.asset_type === "power_tools") && (
+                              <span className="text-xs text-blue-600 ml-1">
+                                (Auto-enabled)
+                              </span>
+                            )}
+                          </Label>
+                        </div>
+                      </div>
+
+                      {/* 4. Asset Type & Settings Card - Tag Prefix Section */}
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="tag_prefix"
+                          className="text-sm font-medium"
+                        >
+                          Tag Prefix
+                        </Label>
+
+                        {/* Logic for different asset types */}
+                        {formData.asset_type === "asset" ? (
+                          // For "asset" type: Only show when tag_type is checked
+                          formData.tag_type ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  id="tag_prefix"
+                                  type="text"
+                                  value={formData.tag_prefix}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "tag_prefix",
+                                      e.target.value.toUpperCase()
+                                    )
+                                  }
+                                  placeholder="First 3 characters of asset name"
+                                  maxLength={4}
+                                  className="uppercase w-full focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                First 3 characters of asset name (auto-generated
+                                from name)
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
+                              <Info className="w-4 h-4 inline-block mr-1" />
+                              Enable "Tag Type" to set tag prefix
+                            </div>
+                          )
+                        ) : (
+                          // For "machine" and "power_tools": Always show (existing behavior)
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                id="tag_prefix"
+                                type="text"
+                                value={formData.tag_prefix}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "tag_prefix",
+                                    e.target.value.toUpperCase()
+                                  )
+                                }
+                                placeholder={
+                                  formData.asset_type === "power_tools"
+                                    ? "GL-"
+                                    : formData.asset_type === "machine"
+                                    ? "First 3 chars of name"
+                                    : "First 3 chars of name"
+                                }
+                                maxLength={
+                                  formData.asset_type === "power_tools" ? 3 : 3
+                                }
+                                className="uppercase w-full focus:ring-blue-500 focus:border-blue-500"
+                              />
+                              {formData.asset_type === "power_tools" && (
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                  Auto
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {formData.asset_type === "power_tools"
+                                ? "Fixed prefix for Power Tools"
+                                : "First 3 characters of asset name"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 6. Linked Inventory & Documentation */}
+                <Card className="shadow-sm border border-gray-200 bg-white">
+                  <CardHeader className="pb-4 border-b border-gray-100">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Link2 className="w-5 h-5" />
+                      6. Linked Inventory & Documentation
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Link to inventory items and upload files
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="linked_inventory_id"
+                            className="text-sm font-medium"
+                          >
+                            Linked Inventory Item
+                          </Label>
+                          <Select
+                            options={inventoryItemOptions}
+                            value={
+                              inventoryItemOptions.find(
+                                (option) =>
+                                  option.value === formData.linked_inventory_id
+                              ) || null
+                            }
+                            onChange={(selectedOption) =>
+                              handleSelectChange(
+                                "linked_inventory_id",
+                                selectedOption
+                              )
+                            }
+                            placeholder="Select inventory item"
+                            styles={customStyles}
+                            isSearchable
+                            className="w-full"
+                            isLoading={fetchingData}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Link this asset to an existing inventory item
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="assetPicture"
+                            className="text-sm font-medium"
+                          >
+                            Upload Picture
+                          </Label>
+                          {imagePreview ? (
+                            <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4">
+                              <img
+                                src={imagePreview}
+                                alt="Asset preview"
+                                className="w-full h-48 object-contain rounded-md"
+                              />
+                              <button
+                                type="button"
+                                onClick={removeImage}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors bg-gray-50">
+                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="text-sm text-gray-500">
+                                  <span className="font-semibold">
+                                    Click to upload
+                                  </span>
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  JPEG, PNG, GIF, SVG (MAX. 2MB)
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/svg+xml"
+                                onChange={(e) => handleFileChange(e, "picture")}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="assetDocument"
+                            className="text-sm font-medium"
+                          >
+                            Document Attachment
+                          </Label>
+                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors bg-gray-50">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <FileText className="w-8 h-8 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500">
+                                <span className="font-semibold">
+                                  Click to upload
+                                </span>
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Multiple files can be attached (MAX. 5MB each)
+                              </p>
+                            </div>
+                            <input
+                              type="file"
+                              className="hidden"
+                              multiple
+                              onChange={(e) => handleFileChange(e, "documents")}
+                            />
+                          </label>
+
+                          {documents.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <p className="text-sm font-medium">
+                                Selected files:
+                              </p>
+                              {documents.map((doc, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center justify-between p-2 bg-gray-50 rounded border w-full"
+                                >
+                                  <span className="text-sm truncate flex-1">
+                                    {doc.name}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeDocument(index)}
+                                    className="text-red-500 hover:text-red-700 ml-2"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="remarks"
+                            className="text-sm font-medium"
+                          >
+                            Remarks
+                          </Label>
+                          <Textarea
+                            id="remarks"
+                            value={formData.remarks}
+                            onChange={(e) =>
+                              handleInputChange("remarks", e.target.value)
+                            }
+                            placeholder="Additional notes or remarks..."
+                            rows={4}
+                            className="w-full focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Actions */}
+                <div className="flex gap-3 justify-end pt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/assets")}
+                    className="bg-white text-gray-700 border-gray-300 hover:bg-gray-50 px-8"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 flex items-center gap-2"
+                    disabled={loading || fetchingData}
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Creating Asset...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Create Asset
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
         </main>
       </div>

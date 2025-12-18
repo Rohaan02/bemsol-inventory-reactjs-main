@@ -21,24 +21,24 @@ const ToolsHeader = () => {
                 <div className="flex w-full">
                   <div className="ml-4 first:ml-0">Tools</div>
                   <div className="ml-4 first:ml-0">
-                    <button 
+                    <button
                       className="bg-gray-25 p-3 pl-4 pr-5 rounded-full dark:bg-gray-900 transition-all duration-200 ease-in-out"
                       data-testid="overview-open"
                     >
                       <div className="flex w-full items-center">
                         <div className="ml-3 flex items-center first:ml-0">
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            width="16" 
-                            height="16" 
-                            fill="currentColor" 
-                            viewBox="0 0 24 24" 
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
                             className="text-gray-400"
                           >
-                            <path 
-                              fill="" 
-                              fillRule="evenodd" 
-                              d="M13 3a1 1 0 1 0-2 0v1a1 1 0 1 0 2 0zm5.707 3.707 1-1a1 1 0 0 0-1.414-1.414l-1 1a1 1 0 0 0 1.414 1.414M12 9a3 3 0 0 0-3 3c0 .621.212 1.088.596 1.815l.073.136c.289.543.637 1.198.904 2.049h2.854c.267-.85.615-1.506.904-2.049l.073-.136C14.788 13.088 15 12.62 15 12a3 3 0 0 0-3-3m-1.041 9q.04.47.041 1a1 1 0 1 0 2 0q0-.53.041-1H10.96zM7 12a5 5 0 0 1 10 0c0 1.16-.438 2.012-.829 2.75l-.06.116h-.001c-.372.7-.728 1.37-.935 2.343A8.5 8.5 0 0 0 15 19a3 3 0 1 1-6 0c0-.71-.069-1.296-.175-1.791-.207-.972-.563-1.642-.935-2.343l-.061-.115C7.438 14.01 7 13.159 7 12m-4-1a1 1 0 1 0 0 2h1a1 1 0 1 0 0-2zm17 0a1 1 0 1 0 0 2h1a1 1 0 1 0 0-2zM4.293 4.293a1 1 0 0 1 1.414 0l1 1a1 1 0 0 1-1.414 1.414l-1-1a1 1 0 0 1 0-1.414" 
+                            <path
+                              fill=""
+                              fillRule="evenodd"
+                              d="M13 3a1 1 0 1 0-2 0v1a1 1 0 1 0 2 0zm5.707 3.707 1-1a1 1 0 0 0-1.414-1.414l-1 1a1 1 0 0 0 1.414 1.414M12 9a3 3 0 0 0-3 3c0 .621.212 1.088.596 1.815l.073.136c.289.543.637 1.198.904 2.049h2.854c.267-.85.615-1.506.904-2.049l.073-.136C14.788 13.088 15 12.62 15 12a3 3 0 0 0-3-3m-1.041 9q.04.47.041 1a1 1 0 1 0 2 0q0-.53.041-1H10.96zM7 12a5 5 0 0 1 10 0c0 1.16-.438 2.012-.829 2.75l-.06.116h-.001c-.372.7-.728 1.37-.935 2.343A8.5 8.5 0 0 0 15 19a3 3 0 1 1-6 0c0-.71-.069-1.296-.175-1.791-.207-.972-.563-1.642-.935-2.343l-.061-.115C7.438 14.01 7 13.159 7 12m-4-1a1 1 0 1 0 0 2h1a1 1 0 1 0 0-2zm17 0a1 1 0 1 0 0 2h1a1 1 0 1 0 0-2zM4.293 4.293a1 1 0 0 1 1.414 0l1 1a1 1 0 0 1-1.414 1.414l-1-1a1 1 0 0 1 0-1.414"
                               clipRule="evenodd"
                             />
                           </svg>
@@ -64,20 +64,20 @@ const ToolsHeader = () => {
                     <div className="flex w-full items-center">
                       <div className="ml-5 flex items-center first:ml-0">
                         <div className="w-24">
-                          <div 
-                            className="bg-gray-100 rounded spark-progress w-full overflow-hidden" 
+                          <div
+                            className="bg-gray-100 rounded spark-progress w-full overflow-hidden"
                             data-testid="progress-bar"
                           >
-                            <div 
-                              className="inline-block leading-none text-center text-white bg-yellow-300 h-4 rounded" 
-                              style={{ width: 'max(8px, 89.6%)' }}
+                            <div
+                              className="inline-block leading-none text-center text-white bg-yellow-300 h-4 rounded"
+                              style={{ width: "max(8px, 89.6%)" }}
                             />
                           </div>
                         </div>
                       </div>
                       <div className="ml-5 flex items-center first:ml-0">
-                        <p 
-                          data-testid="stat_info_text" 
+                        <p
+                          data-testid="stat_info_text"
                           className="break-words max-w-full text-md text-primary text-left font-normal normal-case font-sans m-0"
                         >
                           448 of 500
@@ -98,17 +98,17 @@ const ToolsHeader = () => {
                       aria-expanded="false"
                       data-state="closed"
                     >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="18" 
-                        height="18" 
-                        fill="currentColor" 
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        fill="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path 
-                          fill="" 
-                          fillRule="evenodd" 
-                          d="M6 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4m8-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0m6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0" 
+                        <path
+                          fill=""
+                          fillRule="evenodd"
+                          d="M6 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4m8-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0m6 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0"
                           clipRule="evenodd"
                         />
                       </svg>
@@ -125,15 +125,15 @@ const ToolsHeader = () => {
                     >
                       <span className="flex items-center overflow-hidden">
                         <span className="mr-0 md:mr-3">
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            width="18" 
-                            height="18" 
-                            fill="currentColor" 
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            fill="currentColor"
                             viewBox="0 0 24 24"
                           >
-                            <path 
-                              fill="" 
+                            <path
+                              fill=""
                               d="M13 4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7v7a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7z"
                             />
                           </svg>

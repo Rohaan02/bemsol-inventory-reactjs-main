@@ -26,7 +26,6 @@ import UserIndex from "./Pages/Users/UserIndex";
 import UserPermissions from "./Pages/Users/UserPermissions";
 import AddNewUser from "./Pages/Users/AddNewUser";
 import EditUser from "./Pages/Users/EditUser";
-import AssetIndex from "./Pages/Assets/AssetIndex";
 import VehicleIndex from "./Pages/Vehicle/VehicleIndex";
 import AddVehicle from "./Pages/Vehicle/AddVehicle";
 import EditVehicle from "./Pages/Vehicle/EditVehicle";
@@ -86,6 +85,9 @@ import GateOutL1Approval from "./components/Pages/GateProcessManagement/GateOutL
 import GateOutL2Approval from "./components/Pages/GateProcessManagement/GateOutL2Approval";
 import GateOutwardSecurity from "./components/Pages/GateProcessManagement/GateOutwardSecurity";
 import CreateTransferRequest from "./components/Pages/GateProcessManagement/CreateTransferRequest";
+import AssetIndex from "./Pages/Assets/AssetIndex";
+import AddAsset from "./Pages/Assets/AddAsset";
+import EditAsset from "./Pages/Assets/EditAsset";
 
 function App() {
   const location = useLocation();
@@ -137,6 +139,9 @@ function App() {
             <Route path="gate-out-request" element={<GateOutL2Approval />} />
             <Route path="gate-out-security" element={<GateOutwardSecurity />} />
             <Route path="create-transfer" element={<CreateTransferRequest />} />
+            <Route path="assets" element={<AssetIndex />} />
+            <Route path="assets/add" element={<AddAsset />} />
+            <Route path="assets/edit/:id" element={<EditAsset />} />
             <Route path="category" element={<CategoryIndex />} />
             <Route path="accounts" element={<AccountsIndex />} />
             <Route path="location" element={<LocationIndex />} />
@@ -158,7 +163,6 @@ function App() {
             <Route path="users/add" element={<AddNewUser />} />
             <Route path="users/edit/:id" element={<EditUser />} />
             <Route path="user-permissions/:id" element={<UserPermissions />} />
-            <Route path="assets" element={<AssetIndex />} />
             <Route path="vehicles" element={<VehicleIndex />} />
             <Route path="vehicles/add" element={<AddVehicle />} />
             <Route path="vehicles/edit/:id" element={<EditVehicle />} />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tab } from "@headlessui/react";
-import inventoryItemAPI from "@/lib/InventoryItemApi";
+import inventoryItemAPI from "@/lib/inventoryItemAPI";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
 import LocationsCard from "./LocationCard";
@@ -64,6 +64,7 @@ const formatDate = (dateString) => {
 };
 
 const ItemTracking = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [item, setItem] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -195,7 +196,11 @@ const ItemTracking = () => {
 
   return (
     <div className="flex h-full min-h-screen bg-gray-100">
+      {/* <Sidebar sidebarOpen={menuOpen} setSidebarOpen={setMenuOpen} /> */}
+
       <div className="flex flex-col flex-1 overflow-hidden">
+        {/* <Header sidebarOpen={menuOpen} setSidebarOpen={setMenuOpen} /> */}
+
         {/* Full Width Item Info Section */}
         <div className="bg-white border-b border-gray-200">
           <div className="p-4 md:p-6">

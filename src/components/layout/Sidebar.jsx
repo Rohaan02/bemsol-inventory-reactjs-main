@@ -755,7 +755,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                           {isActiveRoute("/create-shipment") && (
                             <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
                           )}
-                          Create Shipment
+                          Create Shipments
                         </Link>
                       </li>
                       <li>

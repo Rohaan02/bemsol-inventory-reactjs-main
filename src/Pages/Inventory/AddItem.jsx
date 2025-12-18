@@ -461,9 +461,9 @@ const AddItem = () => {
 
   return (
     <div className="flex h-full min-h-screen bg-white-50">
-      <Sidebar />
+      {/* <Sidebar /> */}
       <div className="flex flex-col flex-1">
-        <Header />
+        {/* <Header /> */}
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <div>

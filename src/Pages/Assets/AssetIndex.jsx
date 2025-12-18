@@ -332,6 +332,13 @@ const AssetIndex = () => {
         className="w-48 bg-white shadow-lg border border-gray-200 rounded-lg"
       >
         <DropdownMenuItem
+          onClick={() => navigate(`/asset/${asset.id}`)}
+          className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+        >
+          <Eye className="h-4 w-4" />
+          <span>View</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
           onClick={() => navigate(`/assets/edit/${asset.id}`)}
           className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-700"
         >
@@ -515,9 +522,9 @@ const AssetIndex = () => {
 
   return (
     <div className="flex h-full min-h-screen bg-white">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      {/* <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} /> */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        {/* <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} /> */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-full mx-auto">
             {/* Header */}

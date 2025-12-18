@@ -324,6 +324,18 @@ const ItemTracking = () => {
                 >
                   Inventory Activity
                 </Tab>
+                <Tab
+                  className={({ selected }) =>
+                    classNames(
+                      "px-4 py-2 font-medium text-sm rounded-t-lg",
+                      selected
+                        ? "bg-white border-t border-l border-r border-gray-300 text-green-600"
+                        : "text-black hover:text-green-700"
+                    )
+                  }
+                >
+                  Compatible Parts
+                </Tab>
               </Tab.List>
 
               <Tab.Panels className="h-[calc(100vh-300px)] overflow-y-auto">

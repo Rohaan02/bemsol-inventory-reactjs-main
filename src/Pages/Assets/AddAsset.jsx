@@ -566,9 +566,9 @@ const AddAsset = () => {
 
   return (
     <div className="flex h-full min-h-screen bg-white">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      {/* <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} /> */}
       <div className="flex flex-col flex-1 overflow-hidden w-full">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        {/* <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} /> */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-white">
           <div className="max-w-full mx-auto">
             {/* Header */}

@@ -88,6 +88,7 @@ import CreateTransferRequest from "./components/Pages/GateProcessManagement/Crea
 import AssetIndex from "./Pages/Assets/AssetIndex";
 import AddAsset from "./Pages/Assets/AddAsset";
 import EditAsset from "./Pages/Assets/EditAsset";
+import ViewAsset from "./Pages/Assets/ViewAsset";
 
 function App() {
   const location = useLocation();
@@ -141,6 +142,7 @@ function App() {
             <Route path="create-transfer" element={<CreateTransferRequest />} />
             <Route path="assets" element={<AssetIndex />} />
             <Route path="assets/add" element={<AddAsset />} />
+            <Route path="asset/:id" element={<ViewAsset />} />
             <Route path="assets/edit/:id" element={<EditAsset />} />
             <Route path="category" element={<CategoryIndex />} />
             <Route path="accounts" element={<AccountsIndex />} />

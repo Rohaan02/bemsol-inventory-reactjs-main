@@ -28,7 +28,6 @@ import locationAPI from "@/lib/locationAPI";
 import accountAPI from "@/lib/accountAPI";
 import inventoryItemAPI from "@/lib/InventoryItemApi";
 
-
 const ItemsIndex = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
@@ -258,7 +257,12 @@ const ItemsIndex = () => {
   const tableColumns = [
     { key: "select", label: "Select", type: "select" },
     { key: "image", label: "Image", type: "image" },
-    { key: "item_code", label: "Code", type: "link", linkTemplate: (item) => `/item-tracking/track/${item.id}` },
+    {
+      key: "item_code",
+      label: "Code",
+      type: "link",
+      linkTemplate: (item) => `/item-tracking/track/${item.id}`,
+    },
     { key: "item_name", label: "Name", type: "text" },
     { key: "manufacturer_name", label: "Manufacturer", type: "text" },
     { key: "category_name", label: "Category", type: "text" },
@@ -273,25 +277,34 @@ const ItemsIndex = () => {
     {
       key: "category_id",
       label: "Category",
-      options: categories.map(cat => ({ value: cat.id.toString(), label: cat.category_name }))
+      options: categories.map((cat) => ({
+        value: cat.id.toString(),
+        label: cat.category_name,
+      })),
     },
     {
       key: "location_id",
       label: "Location",
-      options: locations.map(loc => ({ value: loc.id.toString(), label: loc.name }))
+      options: locations.map((loc) => ({
+        value: loc.id.toString(),
+        label: loc.name,
+      })),
     },
     {
       key: "account_id",
       label: "Account",
-      options: accounts.map(acc => ({ value: acc.id.toString(), label: acc.account_name }))
+      options: accounts.map((acc) => ({
+        value: acc.id.toString(),
+        label: acc.account_name,
+      })),
     },
     {
       key: "is_active",
       label: "Status",
       options: [
         { value: "true", label: "Active" },
-        { value: "false", label: "Inactive" }
-      ]
+        { value: "false", label: "Inactive" },
+      ],
     },
   ];
 
@@ -301,28 +314,35 @@ const ItemsIndex = () => {
       label: "Edit",
       icon: <Edit className="w-4 h-4" />,
       onClick: handleEditClick,
-      showCondition: (item) => item.is_active
+      showCondition: (item) => item.is_active,
     },
     {
       key: "delete",
       label: "Delete",
       icon: <Trash2 className="w-4 h-4" />,
       onClick: handleDeleteClick,
-      showCondition: (item) => item.is_active
+      showCondition: (item) => item.is_active,
     },
     {
       key: "view",
       label: "View",
       icon: <Eye className="w-4 h-4" />,
-      onClick: (item) => navigate(`/item-tracking/track/${item.id}`)
+      onClick: (item) => navigate(`/item-tracking/track/${item.id}`),
+      showCondition: (item) => item.is_active,
     },
     {
-      key: "toggle_status",
-      label: (item) => item.is_active ? "Deactivate" : "Activate",
-      icon: (item) => item.is_active ?
-        <Ban className="w-4 h-4 text-red-500" /> :
-        <CheckCircle className="w-4 h-4 text-green-500" />,
-      onClick: handleUpdateStatusClick
+      key: "activate",
+      label: "Activate",
+      icon: <CheckCircle className="w-4 h-4 text-green-500" />,
+      onClick: handleUpdateStatusClick,
+      showCondition: (item) => !item.is_active,
+    },
+    {
+      key: "deactivate",
+      label: "Dectivate",
+      icon: <Ban className="w-4 h-4 text-red-500" />,
+      onClick: handleUpdateStatusClick,
+      showCondition: (item) => item.is_active,
     },
   ];
 
@@ -331,34 +351,37 @@ const ItemsIndex = () => {
       key: "add_to_demand",
       label: "Add to Demand",
       icon: <Download className="w-4 h-4" />,
-      onClick: () => console.log("Add to demand")
+      onClick: () => console.log("Add to demand"),
     },
     {
       key: "print_labels",
       label: "Print Labels",
       icon: <Printer className="w-4 h-4" />,
-      onClick: () => console.log("Print labels")
+      onClick: () => console.log("Print labels"),
     },
     {
       key: "archive",
       label: "Archive",
       icon: <Ban className="w-4 h-4" />,
-      onClick: handleBulkArchive
+      onClick: handleBulkArchive,
     },
   ];
 
   const customRenderers = {
-    manufacturer_name: (item) => item.manufacturer?.name || item.manufacturer_name || "-",
+    manufacturer_name: (item) =>
+      item.manufacturer?.name || item.manufacturer_name || "-",
     category_name: (item) => item.category?.category_name || "-",
-    location_names: (item) => item.location_names && item.location_names.length > 0
-      ? item.location_names.join(", ")
-      : "—",
+    location_names: (item) =>
+      item.location_names && item.location_names.length > 0
+        ? item.location_names.join(", ")
+        : "—",
     total_quantity: (item) => item.total_quantity ?? item.quantity ?? 0,
-    is_active: (item) => item.is_active ? (
-      <Badge variant="success">Active</Badge>
-    ) : (
-      <Badge variant="destructive">Inactive</Badge>
-    ),
+    is_active: (item) =>
+      item.is_active ? (
+        <Badge variant="success">Active</Badge>
+      ) : (
+        <Badge variant="destructive">Inactive</Badge>
+      ),
   };
 
   // Column definitions for visibility control
@@ -378,37 +401,44 @@ const ItemsIndex = () => {
 
   return (
     <div className="h-full">
-          {/* Header Section */}
-          <InventoryHeader
-            onExportExcel={handleExportExcel}
-            navigate={navigate}
-            onBulkArchive={handleBulkArchive}
-            hasSelectedItems={selectedItems.size > 0}
-          />
+      {/* Header Section */}
+      <InventoryHeader
+        onExportExcel={handleExportExcel}
+        navigate={navigate}
+        onBulkArchive={handleBulkArchive}
+        hasSelectedItems={selectedItems.size > 0}
+      />
 
-          {/* Location Tabs */}
-          <LocationTabs
-            locations={locations}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
+      {/* Location Tabs */}
+      <LocationTabs
+        locations={locations}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
-          {/* Stats Cards */}
-          <StatsCards stats={inventoryStats} />
+      {/* Stats Cards */}
+      <StatsCards stats={inventoryStats} />
 
-          {/* Data Table */}
-          <DataTable
-            data={filteredItems}
-            columns={tableColumns}
-            searchKeys={["item_code", "item_name", "specification", "manufacturer_model"]}
-            filterOptions={tableFilters}
-            rowActions={tableRowActions}
-            bulkActions={tableBulkActions}
-            onSelectionChange={setSelectedItems}
-            customRenderers={customRenderers}
-            getRowClassName={(item) => !item.is_active ? 'bg-gray-200 cursor-not-allowed' : ''}
-            getRowCursor={(item) => !item.is_active ? 'cursor-not-allowed' : ''}
-          />
+      {/* Data Table */}
+      <DataTable
+        data={filteredItems}
+        columns={tableColumns}
+        searchKeys={[
+          "item_code",
+          "item_name",
+          "specification",
+          "manufacturer_model",
+        ]}
+        filterOptions={tableFilters}
+        rowActions={tableRowActions}
+        bulkActions={tableBulkActions}
+        onSelectionChange={setSelectedItems}
+        customRenderers={customRenderers}
+        getRowClassName={(item) =>
+          !item.is_active ? "!bg-gray-200 cursor-not-allowed" : ""
+        }
+        getRowCursor={(item) => (!item.is_active ? "cursor-not-allowed" : "")}
+      />
     </div>
   );
 };

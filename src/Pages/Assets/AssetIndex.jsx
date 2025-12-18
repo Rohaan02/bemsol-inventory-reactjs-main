@@ -391,8 +391,8 @@ const AssetIndex = () => {
         return asset.unit?.name || asset.unit_id || "-";
 
       case "unit_price":
-        return asset.unit_price
-          ? `$${parseFloat(asset.unit_price).toFixed(2)}`
+        return asset.unit_cost
+          ? `$${parseFloat(asset.unit_cost).toFixed(2)}`
           : "-";
 
       case "asset_type":
@@ -407,14 +407,14 @@ const AssetIndex = () => {
         return asset.maintenance === "yes" ? "Yes" : "No";
 
       case "specifications":
-        return asset.specifications ? (
+        return asset.specification ? (
           <span
             className="truncate max-w-[200px] inline-block"
-            title={asset.specifications}
+            title={asset.specification}
           >
-            {asset.specifications.length > 50
-              ? `${asset.specifications.substring(0, 50)}...`
-              : asset.specifications}
+            {asset.specification.length > 50
+              ? `${asset.specification.substring(0, 50)}...`
+              : asset.specification}
           </span>
         ) : (
           "-"
@@ -424,7 +424,7 @@ const AssetIndex = () => {
         return asset.manufacturer_name || "-";
 
       case "vendor_name":
-        return asset.vendor?.vendor_name || asset.vendor_name || "-";
+        return asset.vendor?.name || asset.name || "-";
 
       case "status":
         return asset.is_active ? "Active" : "Inactive";

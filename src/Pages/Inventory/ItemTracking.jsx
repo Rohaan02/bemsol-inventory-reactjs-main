@@ -6,6 +6,22 @@ import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
 import LocationsCard from "./LocationCard";
 import InventoryActivity from "./InventoryActivity";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import api from "@/lib/axiosConfig";
 
 import {
   ArrowLeft,
@@ -74,6 +90,26 @@ const ItemTracking = () => {
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [addingComment, setAddingComment] = useState(false);
+
+  //Compatible Parts Tab
+  const [compatibleParts, setCompatibleParts] = useState([]);
+  const [selectedPart, setSelectedPart] = useState("placeholder");
+  const [selectedParts, setSelectedParts] = useState([]);
+  useEffect(() => {
+    api
+      .get("/compatibility-parts")
+      .then((response) => {
+        // The response has a data property containing the array
+        const parts = Array.isArray(response.data?.data)
+          ? response.data.data
+          : response.data || [];
+        setCompatibleParts(parts);
+      })
+      .catch((error) => {
+        console.error("Error fetching compatible parts:", error);
+        setCompatibleParts([]);
+      });
+  }, []);
 
   const documentsData = [
     {
@@ -740,6 +776,163 @@ const ItemTracking = () => {
                   <Card className="bg-white">
                     <CardContent className="text-black">
                       <InventoryActivity itemId={id} />
+                    </CardContent>
+                  </Card>
+                </Tab.Panel>
+
+                <Tab.Panel>
+                  <Card className="bg-white">
+                    <CardHeader>
+                      <CardTitle className="text-green-600">
+                        Compatible Parts
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="flex items-start gap-4">
+                        {/* Select dropdown */}
+                        <div className="flex-1 space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Select Compatible Parts
+                          </label>
+                          <Select
+                            value={selectedPart}
+                            onValueChange={(value) => {
+                              if (value && value !== "placeholder") {
+                                if (!selectedParts.includes(value)) {
+                                  setSelectedParts([...selectedParts, value]);
+                                }
+                                setSelectedPart("placeholder"); // Reset to placeholder
+                              }
+                            }}
+                            className="w-full"
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a compatible part..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="placeholder" disabled>
+                                Select a part...
+                              </SelectItem>
+                              {compatibleParts
+                                .filter(
+                                  (part) =>
+                                    !selectedParts.includes(part.id.toString())
+                                )
+                                .map((part) => (
+                                  <SelectItem
+                                    key={part.id}
+                                    value={part.id.toString()}
+                                  >
+                                    {part.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Selected parts table */}
+                      {selectedParts.length > 0 ? (
+                        <div className="border rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12">#</TableHead>
+                                <TableHead>Part Name</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {selectedParts.map((partId, index) => {
+                                const part = compatibleParts.find(
+                                  (p) => p.id.toString() === partId
+                                );
+                                return (
+                                  <TableRow key={partId}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell className="font-medium">
+                                      {part ? part.name : "Unknown Part"}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedParts(
+                                            selectedParts.filter(
+                                              (id) => id !== partId
+                                            )
+                                          );
+                                        }}
+                                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                      >
+                                        Remove
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500 border rounded-lg">
+                          <p>No compatible parts selected yet.</p>
+                          <p className="text-sm mt-1">
+                            Select parts from the dropdown above
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex justify-end gap-2 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          className="bg-white hover:bg-slate-200"
+                          onClick={() => {
+                            if (selectedParts.length > 0) {
+                              setSelectedParts([]);
+                              toast.info("All parts cleared");
+                            }
+                          }}
+                          disabled={selectedParts.length === 0}
+                        >
+                          Clear All
+                        </Button>
+                        <Button
+                          className="bg-green-900 text-white hover:bg-green-700"
+                          onClick={async () => {
+                            if (selectedParts.length === 0) {
+                              toast.warning("Please select at least one part");
+                              return;
+                            }
+
+                            try {
+                              // Save the selected parts to the server
+                              await api.post(
+                                `/inventory/${id}/compatible-parts`,
+                                {
+                                  compatible_parts: selectedParts.map((id) =>
+                                    parseInt(id)
+                                  ),
+                                }
+                              );
+
+                              toast.success(
+                                "Compatible parts saved successfully"
+                              );
+                            } catch (error) {
+                              console.error(
+                                "Error saving compatible parts:",
+                                error
+                              );
+                              toast.error("Failed to save compatible parts");
+                            }
+                          }}
+                        >
+                          Save Compatible Parts
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </Tab.Panel>

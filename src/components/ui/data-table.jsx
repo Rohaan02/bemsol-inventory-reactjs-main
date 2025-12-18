@@ -68,12 +68,17 @@ const FilterSidebar = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {filterOptions.map((filterOption) => (
               <div key={filterOption.key} className="space-y-2">
-                <Label htmlFor={`${filterOption.key}-filter`} className="text-sm font-medium">
+                <Label
+                  htmlFor={`${filterOption.key}-filter`}
+                  className="text-sm font-medium"
+                >
                   {filterOption.label}
                 </Label>
                 <Select
                   value={filters[filterOption.key] || ""}
-                  onValueChange={(value) => onFilterChange(filterOption.key, value)}
+                  onValueChange={(value) =>
+                    onFilterChange(filterOption.key, value)
+                  }
                 >
                   <SelectTrigger id={`${filterOption.key}-filter`}>
                     <SelectValue placeholder={`All ${filterOption.label}`} />
@@ -81,7 +86,10 @@ const FilterSidebar = ({
                   <SelectContent>
                     <SelectItem value="">All {filterOption.label}</SelectItem>
                     {filterOption.options.map((option) => (
-                      <SelectItem key={option.value} value={option.value.toString()}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value.toString()}
+                      >
                         {option.label}
                       </SelectItem>
                     ))}
@@ -112,7 +120,11 @@ const ColumnVisibility = ({ columns, visibleColumns, onColumnToggle }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 bg-primary-color hover:bg-primary-color/90 text-white">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 bg-primary-color hover:bg-primary-color/90 text-white"
+        >
           <Settings className="h-4 w-4 mr-2" />
           Columns
         </Button>
@@ -121,7 +133,9 @@ const ColumnVisibility = ({ columns, visibleColumns, onColumnToggle }) => {
         {columns.map((column) => (
           <DropdownMenuItem
             key={column.key}
-            onClick={() => onColumnToggle(column.key, !visibleColumns.includes(column.key))}
+            onClick={() =>
+              onColumnToggle(column.key, !visibleColumns.includes(column.key))
+            }
             className="flex items-center justify-between cursor-pointer"
           >
             <span className="capitalize">{column.label}</span>
@@ -196,12 +210,21 @@ const BulkActions = ({ selectedCount, bulkActions = [] }) => {
       <div className="flex gap-2 relative">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2 bg-white text-black">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 bg-white text-black"
+            >
               <Plus className="w-4 h-4" />
               Actions
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="bottom" className="min-w-[160px] z-50" sideOffset={5}>
+          <DropdownMenuContent
+            align="start"
+            side="bottom"
+            className="min-w-[160px] z-50"
+            sideOffset={5}
+          >
             {bulkActions.map((action) => (
               <DropdownMenuItem
                 key={action.key}
@@ -277,7 +300,9 @@ const DataTable = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
   const [selectedItems, setSelectedItems] = useState(new Set());
-  const [visibleColumns, setVisibleColumns] = useState(columns.map(col => col.key));
+  const [visibleColumns, setVisibleColumns] = useState(
+    columns.map((col) => col.key)
+  );
 
   // Filter data based on search and filters
   const filteredData = useMemo(() => {
@@ -287,7 +312,7 @@ const DataTable = ({
     if (searchable && searchTerm && searchKeys.length > 0) {
       const term = searchTerm.toLowerCase();
       result = result.filter((item) =>
-        searchKeys.some(key => {
+        searchKeys.some((key) => {
           const value = item[key];
           return value && value.toString().toLowerCase().includes(term);
         })
@@ -296,10 +321,10 @@ const DataTable = ({
 
     // Apply filters
     if (filterable && filterOptions.length > 0) {
-      filterOptions.forEach(filterOption => {
+      filterOptions.forEach((filterOption) => {
         const filterValue = filters[filterOption.key];
         if (filterValue) {
-          result = result.filter(item => {
+          result = result.filter((item) => {
             const itemValue = item[filterOption.key];
             return itemValue && itemValue.toString() === filterValue;
           });
@@ -324,7 +349,7 @@ const DataTable = ({
 
   // Handlers
   const handleFilterChange = (filterKey, value) => {
-    setFilters(prev => ({ ...prev, [filterKey]: value }));
+    setFilters((prev) => ({ ...prev, [filterKey]: value }));
     setCurrentPage(1);
   };
 
@@ -335,10 +360,8 @@ const DataTable = ({
   };
 
   const handleColumnToggle = (columnKey, checked) => {
-    setVisibleColumns(prev =>
-      checked
-        ? [...prev, columnKey]
-        : prev.filter(col => col !== columnKey)
+    setVisibleColumns((prev) =>
+      checked ? [...prev, columnKey] : prev.filter((col) => col !== columnKey)
     );
   };
 
@@ -358,7 +381,7 @@ const DataTable = ({
       setSelectedItems(new Set());
       onSelectionChange?.(new Set());
     } else {
-      const allIds = new Set(paginatedData.map(item => item.id));
+      const allIds = new Set(paginatedData.map((item) => item.id));
       setSelectedItems(allIds);
       onSelectionChange?.(allIds);
     }
@@ -369,7 +392,7 @@ const DataTable = ({
   };
 
   const hasActiveFilters = () => {
-    return searchTerm || Object.values(filters).some(value => value);
+    return searchTerm || Object.values(filters).some((value) => value);
   };
 
   // Render cell content
@@ -381,44 +404,53 @@ const DataTable = ({
     const value = item[column.key];
 
     switch (column.type) {
-      case 'image':
+      case "image":
         return value ? (
           <img
             src={value}
-            alt={item.name || item.title || 'Image'}
+            alt={item.name || item.title || "Image"}
             className="w-10 h-10 object-cover rounded-md"
           />
         ) : (
           <span className="text-gray-400">No Image</span>
         );
 
-      case 'badge':
+      case "badge":
         return value ? (
-          <Badge variant={value.variant || 'default'}>{value.label || value}</Badge>
+          <Badge variant={value.variant || "default"}>
+            {value.label || value}
+          </Badge>
         ) : null;
 
-      case 'currency':
-        return value ? `PKR ${value}` : '-';
+      case "currency":
+        return value ? `PKR ${value}` : "-";
 
-      case 'link':
+      case "link":
         return (
           <Link
-            to={column.linkTemplate ? column.linkTemplate(item) : '#'}
+            to={column.linkTemplate ? column.linkTemplate(item) : "#"}
             className="text-blue-500 hover:underline"
           >
             {value}
           </Link>
         );
 
-      case 'boolean':
-        return value ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Ban className="w-4 h-4 text-red-500" />;
+      case "boolean":
+        return value ? (
+          <CheckCircle className="w-4 h-4 text-green-500" />
+        ) : (
+          <Ban className="w-4 h-4 text-red-500" />
+        );
 
       default:
-        return value || '-';
+        return value || "-";
     }
   };
 
-  const isAllSelected = selectable && paginatedData.length > 0 && paginatedData.every(item => selectedItems.has(item.id));
+  const isAllSelected =
+    selectable &&
+    paginatedData.length > 0 &&
+    paginatedData.every((item) => selectedItems.has(item.id));
 
   return (
     <div className="h-full flex flex-col">
@@ -502,8 +534,8 @@ const DataTable = ({
       )}
 
       {/* Table */}
-      <div className="flex-1 overflow-hidden bg-white rounded-lg border border-gray-200 shadow">
-        <div className="h-full overflow-auto">
+      <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow">
+        <div className="overflow-y-hidden h-full">
           {loading ? (
             <div className="flex items-center justify-center h-32">
               <div className="text-gray-500">Loading...</div>
@@ -517,7 +549,7 @@ const DataTable = ({
               <thead className="bg-gray-100 text-gray-700 text-left sticky top-0 z-10">
                 <tr>
                   {/* Select Column */}
-                  {selectable && visibleColumns.includes('select') && (
+                  {selectable && visibleColumns.includes("select") && (
                     <th className="px-4 py-3 bg-gray-100 w-12">
                       <Checkbox
                         checked={isAllSelected}
@@ -528,38 +560,49 @@ const DataTable = ({
                   )}
 
                   {/* Data Columns */}
-                  {columns.map((column) => (
-                    visibleColumns.includes(column.key) && column.key !== 'select' && (
-                      <th
-                        key={column.key}
-                        className={`px-4 py-3 bg-gray-100 ${column.align === 'center' ? 'text-center' : ''}`}
-                      >
-                        {column.label}
-                      </th>
-                    )
-                  ))}
+                  {columns.map(
+                    (column) =>
+                      visibleColumns.includes(column.key) &&
+                      column.key !== "select" && (
+                        <th
+                          key={column.key}
+                          className={`px-4 py-3 bg-gray-100 ${
+                            column.align === "center" ? "text-center" : ""
+                          }`}
+                        >
+                          {column.label}
+                        </th>
+                      )
+                  )}
 
                   {/* Actions Column */}
-                  {rowActions.length > 0 && visibleColumns.includes('actions') && (
-                    <th className="px-4 py-3 bg-gray-100 text-center">Actions</th>
-                  )}
+                  {rowActions.length > 0 &&
+                    visibleColumns.includes("actions") && (
+                      <th className="px-4 py-3 bg-gray-100 text-center">
+                        Actions
+                      </th>
+                    )}
                 </tr>
               </thead>
               <tbody>
                 {paginatedData.map((item) => (
-                <tr
-                  key={item.id}
-                  className={`border-t ${
-                    selectedItems.has(item.id)
-                      ? "bg-blue-50 hover:bg-blue-100"
-                      : "hover:bg-gray-50"
-                  } ${getRowClassName ? getRowClassName(item) : ''} ${
-                    getRowCursor ? getRowCursor(item) : (onRowClick ? 'cursor-pointer' : '')
-                  }`}
-                  onClick={() => onRowClick?.(item)}
-                >
+                  <tr
+                    key={item.id}
+                    className={`border-t ${
+                      selectedItems.has(item.id)
+                        ? "bg-blue-50 hover:bg-blue-100"
+                        : "hover:bg-gray-50"
+                    } ${getRowClassName ? getRowClassName(item) : ""} ${
+                      getRowCursor
+                        ? getRowCursor(item)
+                        : onRowClick
+                        ? "cursor-pointer"
+                        : ""
+                    }`}
+                    onClick={() => onRowClick?.(item)}
+                  >
                     {/* Select Cell */}
-                    {selectable && visibleColumns.includes('select') && (
+                    {selectable && visibleColumns.includes("select") && (
                       <td className="px-4 py-3">
                         <Checkbox
                           checked={selectedItems.has(item.id)}
@@ -569,54 +612,66 @@ const DataTable = ({
                     )}
 
                     {/* Data Cells */}
-                    {columns.map((column) => (
-                      visibleColumns.includes(column.key) && column.key !== 'select' && (
-                        <td
-                          key={column.key}
-                          className={`px-4 py-3 ${column.align === 'center' ? 'text-center' : ''}`}
-                        >
-                          {renderCell(item, column)}
-                        </td>
-                      )
-                    ))}
+                    {columns.map(
+                      (column) =>
+                        visibleColumns.includes(column.key) &&
+                        column.key !== "select" && (
+                          <td
+                            key={column.key}
+                            className={`px-4 py-3 ${
+                              column.align === "center" ? "text-center" : ""
+                            }`}
+                          >
+                            {renderCell(item, column)}
+                          </td>
+                        )
+                    )}
 
                     {/* Actions Cell */}
-                    {rowActions.length > 0 && visibleColumns.includes('actions') && (
-                      <td className="px-4 py-3">
-                        <div className="flex justify-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="p-2">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="min-w-[140px]"
-                            >
-                              {rowActions.map((action) => {
-                                if (action.showCondition && !action.showCondition(item)) {
-                                  return null;
-                                }
-                                return (
-                                  <DropdownMenuItem
-                                    key={action.key}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      action.onClick(item);
-                                    }}
-                                    className="flex items-center gap-2 cursor-pointer"
-                                  >
-                                    {action.icon}
-                                    <span>{action.label}</span>
-                                  </DropdownMenuItem>
-                                );
-                              })}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </td>
-                    )}
+                    {rowActions.length > 0 &&
+                      visibleColumns.includes("actions") && (
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-2"
+                                >
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                className="min-w-[140px]"
+                              >
+                                {rowActions.map((action) => {
+                                  if (
+                                    action.showCondition &&
+                                    !action.showCondition(item)
+                                  ) {
+                                    return null;
+                                  }
+                                  return (
+                                    <DropdownMenuItem
+                                      key={action.key}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        action.onClick(item);
+                                      }}
+                                      className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                      {action.icon}
+                                      <span>{action.label}</span>
+                                    </DropdownMenuItem>
+                                  );
+                                })}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      )}
                   </tr>
                 ))}
               </tbody>

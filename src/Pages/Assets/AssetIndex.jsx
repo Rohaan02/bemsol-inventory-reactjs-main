@@ -64,6 +64,7 @@ const AssetIndex = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
 
+  // --------------- handleUpdateStatus not working
   // Add this function after the existing handler functions
   const handleUpdateStatus = async (asset) => {
     const newStatus = !asset.is_active;

@@ -1,4 +1,3 @@
-
 import api from "./axiosConfig";
 
 const assetAPI = {
@@ -10,28 +9,26 @@ const assetAPI = {
       });
       return res.data.data || res.data || [];
     } catch (error) {
-      console.error("Error fetching assets:", error.response?.data || error.message);
+      console.error(
+        "Error fetching assets:",
+        error.response?.data || error.message
+      );
       return [];
     }
   },
 
   // Create new asset
-  create: async (data) =>
-    api.post("/assets", data).then((res) => res.data),
+  create: async (data) => api.post("/assets", data).then((res) => res.data),
 
   // Get single asset for edit
-  getById: async (id) =>
-    api.get(`/assets/${id}/edit`).then((res) => res.data),
+  getById: async (id) => api.get(`/assets/${id}/`).then((res) => res.data),
 
   // Update asset
-  
- update: async (id, data, config = {}) =>
-    api.post(`/assets/${id}`, data, config).then(res => res.data),
+  update: async (id, data, config = {}) =>
+    api.put(`/assets/${id}`, data, config).then((res) => res.data),
 
   // Delete asset
-  remove: async (id) =>
-    api.delete(`/assets/${id}`).then((res) => res.data),
+  remove: async (id) => api.delete(`/assets/${id}`).then((res) => res.data),
 };
 
 export default assetAPI;
-

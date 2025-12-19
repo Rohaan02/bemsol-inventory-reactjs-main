@@ -4,8 +4,7 @@ import { Tab } from "@headlessui/react";
 import assetAPI from "@/lib/assetAPI"; // Adjust the import path
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
-// import ActivityLog from "./ActivityLog"; // You'll need to create this component
-// import AssetLocations from "./AssetLocations"; // You'll need to create this component
+import api from "@/lib/axiosConfig"; // Add this import
 
 import {
   ArrowLeft,
@@ -43,6 +42,22 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import inventoryItemAPI from "../../lib/InventoryItemApi";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -90,6 +105,17 @@ const ViewAsset = () => {
   const [addingComment, setAddingComment] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Compatible Parts State
+  const [compatibleParts, setCompatibleParts] = useState([]);
+  const [selectedPart, setSelectedPart] = useState("placeholder");
+  const [selectedParts, setSelectedParts] = useState([]);
+
+  // Accessories State
+  const [accessories, setAccessories] = useState([]);
+  const [selectedAccessory, setSelectedAccessory] = useState("placeholder");
+  const [selectedAccessories, setSelectedAccessories] = useState([]);
+  const [loadingAccessories, setLoadingAccessories] = useState(false);
+
   const documentsData = [
     {
       id: 1,
@@ -99,6 +125,55 @@ const ViewAsset = () => {
       date: "Jan 15, 2024",
     },
   ];
+
+  // Fetch compatible parts
+  useEffect(() => {
+    api
+      .get("/compatibility-parts")
+      .then((response) => {
+        // The response has a data property containing the array
+        const parts = Array.isArray(response.data?.data)
+          ? response.data.data
+          : response.data || [];
+        setCompatibleParts(parts);
+      })
+      .catch((error) => {
+        console.error("Error fetching compatible parts:", error);
+        setCompatibleParts([]);
+      });
+  }, []);
+
+  // Fetch accessories
+  const fetchAccessories = async () => {
+    setLoadingAccessories(true);
+    try {
+      const response = await api.get("/accessories");
+
+      let accessoriesData = [];
+      if (Array.isArray(response.data)) {
+        accessoriesData = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        accessoriesData = response.data.data;
+      } else if (Array.isArray(response.data?.accessories)) {
+        accessoriesData = response.data.accessories;
+      }
+
+      setAccessories(accessoriesData);
+    } catch (error) {
+      console.error("Error fetching accessories:", error);
+      toast.error("Failed to fetch accessories");
+      setAccessories([]);
+    } finally {
+      setLoadingAccessories(false);
+    }
+  };
+
+  // Fetch accessories when Accessories tab is active
+  useEffect(() => {
+    if (activeTab === 1) {
+      fetchAccessories();
+    }
+  }, [activeTab]);
 
   // Fetch asset details
   const fetchAsset = async () => {
@@ -122,7 +197,7 @@ const ViewAsset = () => {
     try {
       console.log("Fetching comments for asset ID:", id);
       // You'll need to implement this API call in your assetAPI
-      const response = await assetAPI.getComments(id);
+      const response = await inventoryItemAPI.getComments(id);
       console.log("Full API response:", response);
 
       let commentsData = [];
@@ -171,7 +246,7 @@ const ViewAsset = () => {
     if (!window.confirm("Are you sure you want to delete this asset?")) return;
 
     try {
-      await assetAPI.remove(id);
+      await inventoryItemAPI.remove(id);
       toast.success("Asset deleted successfully");
       navigate("/assets"); // Redirect to assets list
     } catch (error) {
@@ -181,14 +256,14 @@ const ViewAsset = () => {
   };
 
   const handleEdit = () => {
-    navigate(`/asset/${id}/edit`);
+    navigate(`/assets/edit/${id}`);
   };
 
   const handleArchive = async () => {
     if (!window.confirm("Are you sure you want to archive this asset?")) return;
 
     try {
-      await assetAPI.archive(id);
+      await inventoryItemAPI.archive(id);
       toast.success("Asset archived successfully");
       fetchAsset(); // Refresh asset data
     } catch (error) {
@@ -202,7 +277,7 @@ const ViewAsset = () => {
 
     setAddingComment(true);
     try {
-      await assetAPI.addComment(id, {
+      await inventoryItemAPI.addComment(id, {
         comment: newComment,
         user_id: 1, // Replace with actual user ID from auth context
       });
@@ -225,6 +300,25 @@ const ViewAsset = () => {
     if (file) {
       toast.success(`${type} uploaded successfully`);
       event.target.value = "";
+    }
+  };
+
+  // Save accessories function
+  const saveAccessories = async () => {
+    if (selectedAccessories.length === 0) {
+      toast.warning("Please select at least one accessory");
+      return;
+    }
+
+    try {
+      await api.post(`/assets/${id}/accessories`, {
+        accessories: selectedAccessories.map((id) => parseInt(id)),
+      });
+
+      toast.success("Accessories saved successfully");
+    } catch (error) {
+      console.error("Error saving accessories:", error);
+      toast.error("Failed to save accessories");
     }
   };
 
@@ -258,7 +352,7 @@ const ViewAsset = () => {
 
   return (
     <div className="flex h-full min-h-screen bg-gray-100">
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden !overflow-y-hidden">
         {/* Full Width Asset Info Section */}
         <div className="bg-white border-b border-gray-200 shadow-sm">
           <div className="p-4 md:p-6">
@@ -273,7 +367,7 @@ const ViewAsset = () => {
             </div>
             <div className="flex flex-row items-start justify-between gap-4">
               <div className="flex items-start gap-4 flex-1">
-                <div className="bg-gray-300 rounded-lg w-20 h-20 flex items-center justify-center text-xl font-bold text-gray-600 overflow-hidden">
+                <div className="bg-gray-300 rounded-lg w-20 h-20 flex items-center justify-center text-xl font-bold text-gray-600 overflow-hidden overflow-y-hidden">
                   {asset.image_url ? (
                     <img
                       src={asset.image_url}
@@ -424,7 +518,7 @@ const ViewAsset = () => {
         {/* Tabs Section with Sidebar */}
         <div className="flex-1 flex overflow-hidden bg-white-50">
           {/* Main Content Area */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="flex-1 overflow-y-hidden p-4 md:p-6">
             {/* Tabs Section */}
             <Tab.Group
               selectedIndex={activeTab}
@@ -454,7 +548,7 @@ const ViewAsset = () => {
                     )
                   }
                 >
-                  Activity Log
+                  Accessories
                 </Tab>
                 <Tab
                   className={({ selected }) =>
@@ -466,11 +560,11 @@ const ViewAsset = () => {
                     )
                   }
                 >
-                  Locations
+                  Compatible Parts
                 </Tab>
               </Tab.List>
 
-              <Tab.Panels className="h-[calc(100vh-300px)] overflow-y-auto">
+              <Tab.Panels className="h-full overflow-y-auto">
                 <Tab.Panel className="space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Left Column - Main Content */}
@@ -683,79 +777,6 @@ const ViewAsset = () => {
                         </CardContent>
                       </Card>
 
-                      <Card className="bg-white shadow-sm">
-                        <CardHeader>
-                          <CardTitle className="text-green-600 flex items-center gap-2">
-                            <Building size={20} />
-                            Vendor Information
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-black">
-                          {asset.vendor ? (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                                    Vendor Name
-                                  </label>
-                                  <p className="font-medium">
-                                    {asset.vendor.name}
-                                  </p>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                                    Vendor Code
-                                  </label>
-                                  <p className="font-mono">
-                                    {asset.vendor.vendor_code}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {asset.vendor.addresses &&
-                                asset.vendor.addresses.length > 0 && (
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                                      Address
-                                    </label>
-                                    <p className="text-gray-700">
-                                      {asset.vendor.addresses[0].address}
-                                    </p>
-                                  </div>
-                                )}
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {asset.vendor.key_contact_person && (
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                                      Contact Person
-                                    </label>
-                                    <p className="text-gray-700">
-                                      {asset.vendor.key_contact_person}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {asset.vendor.mobile_number && (
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                                      Mobile Number
-                                    </label>
-                                    <p className="text-gray-700">
-                                      {asset.vendor.mobile_number}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 italic">
-                              No vendor information available
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-
                       {/* Location Card moves here when sidebar is open */}
                       {sidebarOpen && activeTab === 0 && (
                         <Card className="bg-white shadow-sm">
@@ -870,7 +891,7 @@ const ViewAsset = () => {
                           </CardContent>
                         </Card>
 
-                        <Card className="bg-white shadow-sm">
+                        {/* <Card className="bg-white shadow-sm">
                           <CardHeader>
                             <CardTitle className="text-green-600">
                               Category Information
@@ -902,7 +923,7 @@ const ViewAsset = () => {
                               </p>
                             )}
                           </CardContent>
-                        </Card>
+                        </Card> */}
 
                         <Card className="bg-white shadow-sm">
                           <CardHeader>
@@ -1211,22 +1232,430 @@ const ViewAsset = () => {
                 </Tab.Panel>
 
                 <Tab.Panel>
+                  {/* ACCESSORIES TAB */}
                   <Card className="bg-white shadow-sm">
-                    <CardContent className="text-black">
-                      {/* <ActivityLog assetId={id} /> */}
+                    <CardHeader>
+                      <CardTitle className="text-green-600">
+                        Accessories
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {loadingAccessories ? (
+                        <div className="flex justify-center items-center py-8">
+                          <Loader2 className="h-8 w-8 animate-spin text-green-600 mr-2" />
+                          <span>Loading accessories...</span>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Current Accessories Table */}
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                              Current Accessories
+                            </h3>
+                            {asset.accessories &&
+                            asset.accessories.length > 0 ? (
+                              <div className="border rounded-lg overflow-hidden">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-12">#</TableHead>
+                                      <TableHead>Accessory Name</TableHead>
+                                      <TableHead>ID</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {asset.accessories.map(
+                                      (accessory, index) => (
+                                        <TableRow key={accessory.id}>
+                                          <TableCell>{index + 1}</TableCell>
+                                          <TableCell className="font-medium">
+                                            {accessory.name ||
+                                              accessory.item_name ||
+                                              `Accessory ${accessory.id}`}
+                                          </TableCell>
+                                          <TableCell className="text-gray-500">
+                                            {accessory.id}
+                                          </TableCell>
+                                        </TableRow>
+                                      )
+                                    )}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-gray-500 border rounded-lg">
+                                <Package
+                                  size={48}
+                                  className="mx-auto text-gray-400 mb-4"
+                                />
+                                <p>No accessories assigned to this asset.</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Add New Accessories Section */}
+                          <div className="pt-6 border-t">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                              Add New Accessories
+                            </h3>
+                            <div className="flex items-start gap-4">
+                              <div className="flex-1 space-y-2">
+                                <label className="text-sm font-medium text-gray-700">
+                                  Select Accessories
+                                </label>
+                                <Select
+                                  value={selectedAccessory}
+                                  onValueChange={(value) => {
+                                    if (value && value !== "placeholder") {
+                                      if (
+                                        !selectedAccessories.includes(value)
+                                      ) {
+                                        setSelectedAccessories([
+                                          ...selectedAccessories,
+                                          value,
+                                        ]);
+                                      }
+                                      setSelectedAccessory("placeholder");
+                                    }
+                                  }}
+                                  className="w-full"
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select an accessory..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="placeholder" disabled>
+                                      Select an accessory...
+                                    </SelectItem>
+                                    {accessories
+                                      .filter(
+                                        (accessory) =>
+                                          !selectedAccessories.includes(
+                                            accessory.id.toString()
+                                          ) &&
+                                          !asset.accessories?.some(
+                                            (a) => a.id === accessory.id
+                                          )
+                                      )
+                                      .map((accessory) => (
+                                        <SelectItem
+                                          key={accessory.id}
+                                          value={accessory.id.toString()}
+                                        >
+                                          {accessory.name ||
+                                            accessory.item_name ||
+                                            `Accessory ${accessory.id}`}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Selected accessories to add table */}
+                            {selectedAccessories.length > 0 && (
+                              <div className="mt-6">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                  Accessories to Add
+                                </h4>
+                                <div className="border rounded-lg overflow-hidden">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="w-12">
+                                          #
+                                        </TableHead>
+                                        <TableHead>Accessory Name</TableHead>
+                                        <TableHead>Actions</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {selectedAccessories.map(
+                                        (accessoryId, index) => {
+                                          const accessory = accessories.find(
+                                            (a) =>
+                                              a.id.toString() === accessoryId
+                                          );
+                                          return (
+                                            <TableRow key={accessoryId}>
+                                              <TableCell>{index + 1}</TableCell>
+                                              <TableCell className="font-medium">
+                                                {accessory
+                                                  ? accessory.name ||
+                                                    accessory.item_name ||
+                                                    `Accessory ${accessory.id}`
+                                                  : "Unknown Accessory"}
+                                              </TableCell>
+                                              <TableCell>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    setSelectedAccessories(
+                                                      selectedAccessories.filter(
+                                                        (id) =>
+                                                          id !== accessoryId
+                                                      )
+                                                    );
+                                                  }}
+                                                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                                >
+                                                  Remove
+                                                </Button>
+                                              </TableCell>
+                                            </TableRow>
+                                          );
+                                        }
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Action buttons */}
+                            <div className="flex justify-end gap-2 pt-6 border-t">
+                              <Button
+                                variant="outline"
+                                className="bg-white hover:bg-slate-200"
+                                onClick={() => {
+                                  if (selectedAccessories.length > 0) {
+                                    setSelectedAccessories([]);
+                                    toast.info(
+                                      "All pending accessories cleared"
+                                    );
+                                  }
+                                }}
+                                disabled={selectedAccessories.length === 0}
+                              >
+                                Clear Pending
+                              </Button>
+                              <Button
+                                className="bg-green-900 text-white hover:bg-green-700"
+                                onClick={saveAccessories}
+                                disabled={selectedAccessories.length === 0}
+                              >
+                                Add Accessories
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
                 </Tab.Panel>
-
                 <Tab.Panel>
+                  {/* COMPATIBLE PARTS TAB */}
                   <Card className="bg-white shadow-sm">
                     <CardHeader>
                       <CardTitle className="text-green-600">
                         Compatible Parts
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-black">
-                      {/* <AssetLocations assetId={id} /> */}
+                    <CardContent className="space-y-6">
+                      {/* Current Compatible Parts Table */}
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">
+                          Current Compatible Parts
+                        </h3>
+                        {asset.compatibility_parts &&
+                        asset.compatibility_parts.length > 0 ? (
+                          <div className="border rounded-lg overflow-hidden">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-12">#</TableHead>
+                                  <TableHead>Part Name</TableHead>
+                                  <TableHead>ID</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {asset.compatibility_parts.map(
+                                  (part, index) => (
+                                    <TableRow key={part.id}>
+                                      <TableCell>{index + 1}</TableCell>
+                                      <TableCell className="font-medium">
+                                        {part.name || `Part ${part.id}`}
+                                      </TableCell>
+                                      <TableCell className="text-gray-500">
+                                        {part.id}
+                                      </TableCell>
+                                    </TableRow>
+                                  )
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500 border rounded-lg">
+                            <Cpu
+                              size={48}
+                              className="mx-auto text-gray-400 mb-4"
+                            />
+                            <p>No compatible parts assigned to this asset.</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Add New Compatible Parts Section */}
+                      <div className="pt-6 border-t">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">
+                          Add New Compatible Parts
+                        </h3>
+                        <div className="flex items-start gap-4">
+                          <div className="flex-1 space-y-2">
+                            <label className="text-sm font-medium text-gray-700">
+                              Select Compatible Parts
+                            </label>
+                            <Select
+                              value={selectedPart}
+                              onValueChange={(value) => {
+                                if (value && value !== "placeholder") {
+                                  if (!selectedParts.includes(value)) {
+                                    setSelectedParts([...selectedParts, value]);
+                                  }
+                                  setSelectedPart("placeholder");
+                                }
+                              }}
+                              className="w-full"
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a compatible part..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="placeholder" disabled>
+                                  Select a part...
+                                </SelectItem>
+                                {compatibleParts
+                                  .filter(
+                                    (part) =>
+                                      !selectedParts.includes(
+                                        part.id.toString()
+                                      ) &&
+                                      !asset.compatibility_parts?.some(
+                                        (p) => p.id === part.id
+                                      )
+                                  )
+                                  .map((part) => (
+                                    <SelectItem
+                                      key={part.id}
+                                      value={part.id.toString()}
+                                    >
+                                      {part.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Selected parts to add table */}
+                        {selectedParts.length > 0 && (
+                          <div className="mt-6">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                              Parts to Add
+                            </h4>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-12">#</TableHead>
+                                    <TableHead>Part Name</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {selectedParts.map((partId, index) => {
+                                    const part = compatibleParts.find(
+                                      (p) => p.id.toString() === partId
+                                    );
+                                    return (
+                                      <TableRow key={partId}>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell className="font-medium">
+                                          {part ? part.name : "Unknown Part"}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                              setSelectedParts(
+                                                selectedParts.filter(
+                                                  (id) => id !== partId
+                                                )
+                                              );
+                                            }}
+                                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                          >
+                                            Remove
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action buttons */}
+                        <div className="flex justify-end gap-2 pt-6 border-t">
+                          <Button
+                            variant="outline"
+                            className="bg-white hover:bg-slate-200"
+                            onClick={() => {
+                              if (selectedParts.length > 0) {
+                                setSelectedParts([]);
+                                toast.info("All pending parts cleared");
+                              }
+                            }}
+                            disabled={selectedParts.length === 0}
+                          >
+                            Clear Pending
+                          </Button>
+                          <Button
+                            className="bg-green-900 text-white hover:bg-green-700"
+                            onClick={async () => {
+                              if (selectedParts.length === 0) {
+                                toast.warning(
+                                  "Please select at least one part"
+                                );
+                                return;
+                              }
+
+                              try {
+                                await api.post(
+                                  `/assets/${id}/compatible-parts`,
+                                  {
+                                    compatible_parts: selectedParts.map((id) =>
+                                      parseInt(id)
+                                    ),
+                                  }
+                                );
+
+                                toast.success(
+                                  "Compatible parts saved successfully"
+                                );
+                                // Refresh the asset data to show the new parts
+                                fetchAsset();
+                                // Clear the selected parts
+                                setSelectedParts([]);
+                              } catch (error) {
+                                console.error(
+                                  "Error saving compatible parts:",
+                                  error
+                                );
+                                toast.error("Failed to save compatible parts");
+                              }
+                            }}
+                            disabled={selectedParts.length === 0}
+                          >
+                            Add Compatible Parts
+                          </Button>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </Tab.Panel>

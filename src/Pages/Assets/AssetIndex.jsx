@@ -46,6 +46,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import Swal from "sweetalert2";
+import inventoryItemAPI from "../../lib/InventoryItemApi";
 
 const AssetIndex = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,23 +66,29 @@ const AssetIndex = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
 
-  // --------------- handleUpdateStatus not working
   // Add this function after the existing handler functions
-  const handleUpdateStatus = async (asset) => {
+  const handleUpdateStatusClick = async (asset) => {
     const newStatus = !asset.is_active;
-    const action = newStatus ? "activate" : "deactivate";
+    const actionText = newStatus ? "activate" : "deactivate";
 
-    if (!window.confirm(`Are you sure you want to ${action} this asset?`))
-      return;
+    const result = await Swal.fire({
+      title: `Are you sure?`,
+      text: `You are about to ${actionText} the asset: ${asset.item_name}`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: newStatus ? "#3085d6" : "#d33",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: `Yes, ${actionText} it!`,
+    });
 
-    try {
-      // You need to implement this API call in your assetAPI
-      await assetAPI.updateStatus(asset.id, { is_active: newStatus });
-      toast.success(`Asset ${action}d successfully`);
-      fetchAssets(meta.current_page);
-    } catch (error) {
-      console.error(`Error ${action}ing asset:`, error);
-      toast.error(`Failed to ${action} asset`);
+    if (result.isConfirmed) {
+      try {
+        await inventoryItemAPI.updateStatus(asset.id, newStatus);
+        fetchAssets();
+      } catch (error) {
+        console.error("Failed to update status:", error);
+        Swal.fire("Error", "Failed to update status", "error");
+      }
     }
   };
 
@@ -384,7 +392,7 @@ const AssetIndex = () => {
           )}
 
           <DropdownMenuItem
-            onClick={() => handleUpdateStatus(asset)}
+            onClick={() => handleUpdateStatusClick(asset)}
             className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer"
           >
             {asset.is_active ? (

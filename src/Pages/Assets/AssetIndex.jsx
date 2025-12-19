@@ -36,6 +36,8 @@ import {
   EyeOff,
   X,
   Filter,
+  CheckCircle,
+  Ban,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -43,6 +45,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 const AssetIndex = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -61,6 +64,25 @@ const AssetIndex = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
 
+  // Add this function after the existing handler functions
+  const handleUpdateStatus = async (asset) => {
+    const newStatus = !asset.is_active;
+    const action = newStatus ? "activate" : "deactivate";
+
+    if (!window.confirm(`Are you sure you want to ${action} this asset?`))
+      return;
+
+    try {
+      // You need to implement this API call in your assetAPI
+      await assetAPI.updateStatus(asset.id, { is_active: newStatus });
+      toast.success(`Asset ${action}d successfully`);
+      fetchAssets(meta.current_page);
+    } catch (error) {
+      console.error(`Error ${action}ing asset:`, error);
+      toast.error(`Failed to ${action} asset`);
+    }
+  };
+
   // Column visibility settings
   const [visibleColumns, setVisibleColumns] = useState({
     image_url: true,
@@ -77,7 +99,6 @@ const AssetIndex = () => {
     manufacturer_name: false,
     vendor_name: false,
     status: false,
-    created_at: false,
   });
 
   const navigate = useNavigate();
@@ -177,7 +198,6 @@ const AssetIndex = () => {
     { key: "manufacturer_name", label: "Manufacturer", sortable: true },
     { key: "vendor_name", label: "Vendor", sortable: true },
     { key: "status", label: "Status", sortable: true },
-    { key: "created_at", label: "Created At", sortable: true },
   ];
 
   // Get visible columns
@@ -210,7 +230,6 @@ const AssetIndex = () => {
       manufacturer_name: false,
       vendor_name: false,
       status: false,
-      created_at: false,
     };
     setVisibleColumns(newVisibility);
   };
@@ -238,7 +257,10 @@ const AssetIndex = () => {
       setSelectedAssets(new Set());
       setIsAllSelected(false);
     } else {
-      const allIds = new Set(assets.map((a) => a.id));
+      // Only select active assets (similar to InventoryTable)
+      const allIds = new Set(
+        assets.filter((asset) => asset.is_active).map((asset) => asset.id)
+      );
       setSelectedAssets(allIds);
       setIsAllSelected(true);
     }
@@ -316,45 +338,70 @@ const AssetIndex = () => {
     setSearch("");
   };
 
-  const ActionDropdown = ({ asset }) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors"
+  const ActionDropdown = ({ asset }) => {
+    const isInactive = !asset.is_active;
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="w-48 bg-white shadow-lg border border-gray-200 rounded-lg"
         >
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-48 bg-white shadow-lg border border-gray-200 rounded-lg"
-      >
-        <DropdownMenuItem
-          onClick={() => navigate(`/asset/${asset.id}`)}
-          className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer"
-        >
-          <Eye className="h-4 w-4" />
-          <span>View</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => navigate(`/assets/edit/${asset.id}`)}
-          className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-700"
-        >
-          <Pencil className="h-4 w-4" />
-          <span>Edit</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleDelete(asset.id)}
-          className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-red-600"
-        >
-          <Trash2 className="h-4 w-4" />
-          <span>Delete</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+          {!isInactive && (
+            <>
+              <DropdownMenuItem
+                onClick={() => navigate(`/asset/${asset.id}`)}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+              >
+                <Eye className="h-4 w-4" />
+                <span>View</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigate(`/assets/edit/${asset.id}`)}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-700"
+              >
+                <Pencil className="h-4 w-4" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDelete(asset.id)}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-red-600"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </>
+          )}
+
+          <DropdownMenuItem
+            onClick={() => handleUpdateStatus(asset)}
+            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+          >
+            {asset.is_active ? (
+              <>
+                <Ban className="w-4 h-4 text-red-500" />
+                <span>Deactivate</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Activate</span>
+              </>
+            )}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   // Calculate records info for export button
   const totalRecords = meta.total || assets.length;
@@ -427,12 +474,11 @@ const AssetIndex = () => {
         return asset.vendor?.name || asset.name || "-";
 
       case "status":
-        return asset.is_active ? "Active" : "Inactive";
-
-      case "created_at":
-        return asset.created_at
-          ? new Date(asset.created_at).toLocaleDateString()
-          : "-";
+        return asset.is_active ? (
+          <Badge variant="success">Active</Badge>
+        ) : (
+          <Badge variant="destructive">Inactive</Badge>
+        );
 
       default:
         return asset[columnKey] || "-";
@@ -525,7 +571,7 @@ const AssetIndex = () => {
       {/* <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} /> */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} /> */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-hidden p-4 md:p-6">
           <div className="max-w-full mx-auto">
             {/* Header */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
@@ -709,14 +755,24 @@ const AssetIndex = () => {
                             assets.map((asset) => (
                               <TableRow
                                 key={asset.id}
-                                className="hover:bg-gray-50 transition-colors border-b border-gray-100"
+                                className={`hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                                  !asset.is_active
+                                    ? "!bg-gray-200 cursor-not-allowed"
+                                    : ""
+                                } ${
+                                  selectedAssets.has(asset.id)
+                                    ? "bg-blue-50"
+                                    : ""
+                                }`}
                               >
                                 <TableCell className="py-3 px-4">
                                   <Checkbox
                                     checked={selectedAssets.has(asset.id)}
                                     onCheckedChange={() =>
+                                      asset.is_active &&
                                       handleSelectAsset(asset.id)
                                     }
+                                    disabled={!asset.is_active}
                                   />
                                 </TableCell>
                                 {getVisibleColumns().map((column) => (

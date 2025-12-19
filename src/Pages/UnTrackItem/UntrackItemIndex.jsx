@@ -43,11 +43,26 @@ const UntrackItemIndex = () => {
     try {
       setLoading(true);
       const res = await untrackItemAPI.getAll();
-      setItems(res || []);
-      console.log("un items", res);
-      setFiltered(res || []);
-    } catch {
+
+      // Handle different response structures
+      let itemsArray = [];
+
+      if (Array.isArray(res)) {
+        itemsArray = res;
+      } else if (res && Array.isArray(res.data)) {
+        itemsArray = res.data;
+      } else if (res && Array.isArray(res.items)) {
+        itemsArray = res.items;
+      } else if (res && res.success && Array.isArray(res.data)) {
+        itemsArray = res.data;
+      }
+
+      setItems(itemsArray);
+      console.log("un items", itemsArray);
+    } catch (error) {
+      console.error("Fetch error:", error);
       setError("Failed to fetch items");
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -58,14 +73,20 @@ const UntrackItemIndex = () => {
   }, []);
 
   // Get unique tags and statuses for filters
-  const availableTags = useMemo(() => {
-    const tags = items.map((item) => item.tag).filter(Boolean);
-    return [...new Set(tags)];
+  // Note: Your data doesn't have 'tag' or 'service_status' properties
+  // Adjust these based on what's actually in your data
+  const availableConditions = useMemo(() => {
+    if (!Array.isArray(items)) return [];
+    const conditions = items.map((item) => item.condition).filter(Boolean);
+    return [...new Set(conditions)];
   }, [items]);
 
-  const availableStatuses = useMemo(() => {
-    const statuses = items.map((item) => item.service_status).filter(Boolean);
-    return [...new Set(statuses)];
+  const availableCategories = useMemo(() => {
+    if (!Array.isArray(items)) return [];
+    const categories = items
+      .map((item) => item.category?.category_name)
+      .filter(Boolean);
+    return [...new Set(categories)];
   }, [items]);
 
   // Bulk delete selected items
@@ -111,32 +132,39 @@ const UntrackItemIndex = () => {
     // Convert to CSV
     const headers = [
       "ID",
-      "Item No",
+      "Item Code",
       "Item Name",
       "Specification",
-      "Description",
-      "Tag",
+      "Model No",
+      "Manufacturer",
+      "Category",
+      "Unit",
+      "Quantity",
+      "Weight",
+      "Condition",
       "Remarks",
-      "Status",
-      "Inventory Item",
       "Archived",
     ];
+
     const csvData = dataToExport.map((item) => [
       item.id,
-      item.item_number,
+      item.item_code,
       item.item_name,
       item.specification,
-      item.description,
-      item.tag,
+      item.model_no,
+      item.manufacturer,
+      item.category?.category_name || "N/A",
+      item.unit?.name || "N/A",
+      item.quantity,
+      `${item.weight} ${item.weight_unit}`,
+      item.condition,
       item.remarks,
-      item.service_status,
-      item.vehicle?.inventory_items?.item_name || "N/A",
       item.archived ? "Yes" : "No",
     ]);
 
     const csvContent = [
       headers.join(","),
-      ...csvData.map((row) => row.map((field) => `"${field}"`).join(",")),
+      ...csvData.map((row) => row.map((field) => `"${field || ""}"`).join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -185,33 +213,41 @@ const UntrackItemIndex = () => {
     }
   };
 
-  // DataTable configuration
+  // DataTable configuration - FIXED
   const tableColumns = [
     { key: "select", label: "Select", type: "select" },
     { key: "id", label: "ID", type: "text" },
     { key: "picture", label: "Picture", type: "image" },
-    { key: "item_number", label: "Item No", type: "text" },
+    { key: "item_code", label: "Item Code", type: "text" },
     { key: "item_name", label: "Item Name", type: "text" },
     { key: "specification", label: "Specification", type: "text" },
-    { key: "description", label: "Description", type: "text" },
-    { key: "inventory_item_name", label: "Inventory Item", type: "custom" },
-    { key: "tag", label: "Tag", type: "text" },
-    { key: "remarks", label: "Remarks", type: "text" },
-    { key: "service_status", label: "Status", type: "text" },
-    { key: "archived", label: "Archived", type: "badge" },
-    { key: "actions", label: "Actions", type: "actions" },
+    { key: "model_no", label: "Model No", type: "text" },
+    { key: "manufacturer", label: "Manufacturer", type: "text" },
+    { key: "category_name", label: "Category", type: "custom" },
+    { key: "unit_name", label: "Unit", type: "text" },
+    { key: "quantity", label: "Qty", type: "text" },
+    { key: "weight_display", label: "Weight", type: "text" },
+    { key: "condition", label: "Condition", type: "text" },
+    { key: "archived", label: "Status", type: "badge" },
+    // Remove duplicate actions column - DataTable should handle this automatically
   ];
 
   const tableFilters = [
     {
-      key: "tag",
-      label: "Tags",
-      options: availableTags.map(tag => ({ value: tag, label: tag }))
+      key: "condition",
+      label: "Condition",
+      options: availableConditions.map((condition) => ({
+        value: condition,
+        label: condition,
+      })),
     },
     {
-      key: "service_status",
-      label: "Status",
-      options: availableStatuses.map(status => ({ value: status, label: status }))
+      key: "category_name",
+      label: "Category",
+      options: availableCategories.map((category) => ({
+        value: category,
+        label: category,
+      })),
     },
   ];
 
@@ -220,20 +256,21 @@ const UntrackItemIndex = () => {
       key: "edit",
       label: "Edit",
       icon: <Pencil className="w-4 h-4" />,
-      onClick: (item) => navigate(`/untrack-items/edit/${item.id}`)
+      onClick: (item) => navigate(`/untrack-items/edit/${item.id}`),
     },
     {
       key: "view",
       label: "View",
       icon: <Eye className="w-4 h-4" />,
-      onClick: (item) => navigate(`/untrack-items/show/${item.id}`)
+      onClick: (item) => navigate(`/untrack-items/show/${item.id}`),
     },
     {
       key: "delete",
       label: "Delete",
       icon: <Trash2 className="w-4 h-4" />,
       onClick: async (item) => {
-        if (!window.confirm("Are you sure you want to delete this item?")) return;
+        if (!window.confirm("Are you sure you want to delete this item?"))
+          return;
         try {
           const res = await untrackItemAPI.remove(item.id);
           if (res?.success) {
@@ -245,7 +282,7 @@ const UntrackItemIndex = () => {
         } catch {
           toast.error("Something went wrong");
         }
-      }
+      },
     },
   ];
 
@@ -254,51 +291,59 @@ const UntrackItemIndex = () => {
       key: "delete_selected",
       label: "Delete Selected",
       icon: <Trash2 className="w-4 h-4" />,
-      onClick: handleDeleteSelected
+      onClick: handleDeleteSelected,
     },
     {
       key: "export",
       label: "Export",
       icon: <Download className="w-4 h-4" />,
-      onClick: handleExport
+      onClick: handleExport,
     },
   ];
 
+  // Transform data for the table
+  const tableData = useMemo(() => {
+    return items.map((item) => ({
+      ...item,
+      category_name: item.category?.category_name || "N/A",
+      unit_name: item.unit?.name || "N/A",
+      weight_display: `${item.weight || 0} ${item.weight_unit || ""}`,
+      // Add any other transformed fields here
+    }));
+  }, [items]);
+
   const customRenderers = {
-    picture: (item) => item.picture ? (
-      <img
-        src={item.picture_url}
-        alt="pic"
-        className="h-10 w-10 object-cover rounded"
-      />
-    ) : "N/A",
-    inventory_item_name: (item) => {
-      if (!item.vehicle?.inventory_items?.item_name) return <span className="text-gray-400">N/A</span>;
-      return (
-        <div className="flex items-center gap-2">
-          <Car className="h-4 w-4 text-green-600" />
-          <div className="text-sm">
-            <div className="font-medium">
-              {item.vehicle.inventory_items.item_name}
-            </div>
-          </div>
+    picture: (item) =>
+      item.picture_url ? (
+        <img
+          src={item.picture_url}
+          alt="pic"
+          className="h-10 w-10 object-cover rounded"
+        />
+      ) : (
+        <span className="text-gray-400">No Image</span>
+      ),
+    category_name: (item) => (
+      <div className="text-sm">
+        <div className="font-medium">
+          {item.category?.category_name || "N/A"}
         </div>
-      );
-    },
-    archived: (item) => item.archived ? (
-      <Badge variant="destructive">Archived</Badge>
-    ) : (
-      <Badge variant="success">Active</Badge>
+        <div className="text-xs text-gray-500">{item.category?.code || ""}</div>
+      </div>
     ),
+    archived: (item) =>
+      item.archived ? (
+        <Badge variant="destructive">Archived</Badge>
+      ) : (
+        <Badge variant="success">Active</Badge>
+      ),
   };
 
   return (
     <div className="h-full">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Untracked Items
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Untracked Items</h1>
         <div className="flex gap-2">
           <Button
             className="bg-primary-color hover:bg-primary-color/90 text-white"
@@ -318,9 +363,9 @@ const UntrackItemIndex = () => {
 
       {/* Data Table */}
       <DataTable
-        data={items}
+        data={tableData}
         columns={tableColumns}
-        searchKeys={["item_name", "vehicle.inventory_items.item_name"]}
+        searchKeys={["item_code", "item_name", "model_no", "manufacturer"]}
         filterOptions={tableFilters}
         rowActions={tableRowActions}
         bulkActions={tableBulkActions}
@@ -328,8 +373,10 @@ const UntrackItemIndex = () => {
         customRenderers={customRenderers}
         loading={loading}
         emptyMessage="No untracked items found"
-        getRowClassName={(item) => item.archived ? 'bg-gray-200 cursor-not-allowed' : ''}
-        getRowCursor={(item) => item.archived ? 'cursor-not-allowed' : ''}
+        getRowClassName={(item) =>
+          item.archived ? "bg-gray-200 cursor-not-allowed" : ""
+        }
+        getRowCursor={(item) => (item.archived ? "cursor-not-allowed" : "")}
       />
 
       {/* Bulk Import Modal */}

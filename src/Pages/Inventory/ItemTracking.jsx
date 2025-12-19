@@ -252,11 +252,15 @@ const ItemTracking = () => {
             <div className="flex flex-row items-start justify-between gap-4">
               <div className="flex items-start gap-4 flex-1">
                 <div className="bg-gray-300 rounded-lg w-20 h-20 flex items-center justify-center text-xl font-bold text-gray-600">
-                  <img
-                    src={item.image_url}
-                    alt={item.item_code}
-                    className="w-full h-full object-cover"
-                  />
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.item_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-400">No Image</span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1">
                   <h2 className="text-2xl font-bold">{item.item_code}</h2>

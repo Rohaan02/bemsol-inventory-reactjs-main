@@ -91,12 +91,12 @@ import EditAsset from "./Pages/Assets/EditAsset";
 import ViewAsset from "./Pages/Assets/ViewAsset";
 
 function App() {
-  const location = useLocation();
-  // Only enable idle logout on protected routes (not on login/register)
-  const isProtectedRoute = !["/login", "/register"].includes(location.pathname);
-  if (isProtectedRoute) {
-    useIdleLogout();
-  }
+  // const location = useLocation();
+  // // Only enable idle logout on protected routes (not on login/register)
+  // const isProtectedRoute = !["/login", "/register"].includes(location.pathname);
+  // if (isProtectedRoute) {
+  //   useIdleLogout();
+  // }
 
   return (
     <>

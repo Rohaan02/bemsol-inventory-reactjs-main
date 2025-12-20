@@ -36,6 +36,7 @@ import {
   ChevronRight,
   Send,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -95,6 +96,19 @@ const ItemTracking = () => {
   const [compatibleParts, setCompatibleParts] = useState([]);
   const [selectedPart, setSelectedPart] = useState("placeholder");
   const [selectedParts, setSelectedParts] = useState([]);
+  const [isSavingCompatibleParts, setIsSavingCompatibleParts] = useState(false);
+
+  const documentsData = [
+    {
+      id: 1,
+      name: "user_manual.pdf",
+      type: "PDF",
+      size: "2.4 MB",
+      date: "Jan 15, 2024",
+    },
+  ];
+
+  // Fetch compatible parts
   useEffect(() => {
     api
       .get("/compatibility-parts")
@@ -110,16 +124,6 @@ const ItemTracking = () => {
         setCompatibleParts([]);
       });
   }, []);
-
-  const documentsData = [
-    {
-      id: 1,
-      name: "user_manual.pdf",
-      type: "PDF",
-      size: "2.4 MB",
-      date: "Jan 15, 2024",
-    },
-  ];
 
   // Fetch comments function
   const getCommentsData = async () => {
@@ -172,6 +176,18 @@ const ItemTracking = () => {
       const response = await inventoryItemAPI.getById(id);
       const itemData = response.data ?? response;
       console.log("itemData", itemData);
+
+      // Format compatible parts with hasChanges flag
+      if (itemData.compatibility_parts) {
+        itemData.compatibility_parts = itemData.compatibility_parts.map(
+          (part) => ({
+            ...part,
+            name: part.name || `Part ${part.id}`,
+            hasChanges: false,
+          })
+        );
+      }
+
       setItem(itemData);
     } catch (error) {
       console.error(error);
@@ -219,6 +235,118 @@ const ItemTracking = () => {
     if (file) {
       toast.success(`${type} uploaded successfully`);
       event.target.value = "";
+    }
+  };
+
+  // Handle adding a new row for compatible parts
+  const handleAddNewCompatiblePartRow = () => {
+    const newPart = {
+      id: null, // Temporary id for new rows
+      name: "",
+      hasChanges: true,
+    };
+
+    setItem((prev) => ({
+      ...prev,
+      compatibility_parts: [...(prev.compatibility_parts || []), newPart],
+    }));
+  };
+
+  // Get available compatible parts for dropdown (excluding already selected ones)
+  const getAvailableCompatibleParts = () => {
+    if (!item?.compatibility_parts || !compatibleParts.length)
+      return compatibleParts;
+
+    // Get IDs of parts already in the table (excluding current row if editing)
+    const selectedPartIds = item.compatibility_parts
+      .filter((part) => part.id !== null)
+      .map((part) => part.id);
+
+    // Filter out parts that are already in the table
+    return compatibleParts.filter((part) => !selectedPartIds.includes(part.id));
+  };
+
+  // Handle compatible part selection change
+  const handleCompatiblePartChange = (index, partId) => {
+    const selectedPart = compatibleParts.find(
+      (part) => part.id.toString() === partId
+    );
+
+    if (selectedPart) {
+      setItem((prev) => {
+        const updatedParts = [...prev.compatibility_parts];
+        updatedParts[index] = {
+          ...selectedPart,
+          hasChanges: true,
+        };
+        return {
+          ...prev,
+          compatibility_parts: updatedParts,
+        };
+      });
+    }
+  };
+
+  // Handle removing a compatible part
+  const handleRemoveCompatiblePart = (index) => {
+    setItem((prev) => {
+      const updatedParts = [...prev.compatibility_parts];
+      updatedParts.splice(index, 1);
+      return {
+        ...prev,
+        compatibility_parts: updatedParts,
+      };
+    });
+  };
+
+  // Handle saving compatible parts
+  const handleSaveCompatibleParts = async () => {
+    if (!item?.compatibility_parts || item.compatibility_parts.length === 0) {
+      toast.warning("No compatible parts to save");
+      return;
+    }
+
+    // Filter out empty/new rows without selection
+    const validParts = item.compatibility_parts.filter(
+      (part) => part.id !== null
+    );
+
+    if (validParts.length === 0) {
+      toast.warning("Please select at least one compatible part");
+      return;
+    }
+
+    // Check for duplicates
+    const partIds = validParts.map((part) => part.id);
+    const uniqueIds = [...new Set(partIds)];
+
+    if (uniqueIds.length !== partIds.length) {
+      toast.error("Please remove duplicate compatible parts before saving");
+      return;
+    }
+
+    setIsSavingCompatibleParts(true);
+    try {
+      // Since this is inventory item (not asset), we send empty accessories array
+      await api.put(`/update-compatible-parts/${id}`, {
+        compatibility_part_ids: partIds,
+        accessory_ids: [], // Empty array for accessories
+      });
+
+      // Update local state to clear hasChanges flags
+      setItem((prev) => ({
+        ...prev,
+        compatibility_parts: prev.compatibility_parts
+          .filter((part) => part.id !== null)
+          .map((part) => ({ ...part, hasChanges: false })),
+      }));
+
+      toast.success("Compatible parts saved successfully");
+    } catch (error) {
+      console.error("Error saving compatible parts:", error);
+      toast.error("Failed to save compatible parts");
+    } finally {
+      setIsSavingCompatibleParts(false);
     }
   };
 
@@ -317,7 +445,7 @@ const ItemTracking = () => {
                 </DropdownMenu>
 
                 <Button
-                  variant="outline"
+                  variant="success"
                   size="sm"
                   className="flex items-center gap-1 text-black bg-white hover:bg-gray-100 px-2 py-1"
                 >
@@ -785,157 +913,140 @@ const ItemTracking = () => {
                 </Tab.Panel>
 
                 <Tab.Panel>
-                  <Card className="bg-white">
-                    <CardHeader>
+                  {/* COMPATIBLE PARTS TAB - Updated to match the new structure */}
+                  <Card className="bg-white shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between">
                       <CardTitle className="text-green-600">
                         Compatible Parts
                       </CardTitle>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={handleAddNewCompatiblePartRow}
+                      >
+                        <Plus size={16} />
+                        Add Row
+                      </Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="flex items-start gap-4">
-                        {/* Select dropdown */}
-                        <div className="flex-1 space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            Select Compatible Parts
-                          </label>
-                          <Select
-                            value={selectedPart}
-                            onValueChange={(value) => {
-                              if (value && value !== "placeholder") {
-                                if (!selectedParts.includes(value)) {
-                                  setSelectedParts([...selectedParts, value]);
-                                }
-                                setSelectedPart("placeholder"); // Reset to placeholder
-                              }
-                            }}
-                            className="w-full"
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a compatible part..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="placeholder" disabled>
-                                Select a part...
-                              </SelectItem>
-                              {compatibleParts
-                                .filter(
-                                  (part) =>
-                                    !selectedParts.includes(part.id.toString())
-                                )
-                                .map((part) => (
-                                  <SelectItem
-                                    key={part.id}
-                                    value={part.id.toString()}
-                                  >
-                                    {part.name}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
+                      {loadingComments ? (
+                        <div className="flex justify-center items-center py-8">
+                          <Loader2 className="h-8 w-8 animate-spin text-green-600 mr-2" />
+                          <span>Loading compatible parts...</span>
                         </div>
-                      </div>
-
-                      {/* Selected parts table */}
-                      {selectedParts.length > 0 ? (
+                      ) : (
                         <div className="border rounded-lg overflow-hidden">
                           <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="w-12">#</TableHead>
-                                <TableHead>Part Name</TableHead>
-                                <TableHead>Actions</TableHead>
+                                <TableHead>Compatible Part</TableHead>
+                                <TableHead className="w-24">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {selectedParts.map((partId, index) => {
-                                const part = compatibleParts.find(
-                                  (p) => p.id.toString() === partId
-                                );
-                                return (
-                                  <TableRow key={partId}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell className="font-medium">
-                                      {part ? part.name : "Unknown Part"}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedParts(
-                                            selectedParts.filter(
-                                              (id) => id !== partId
-                                            )
-                                          );
-                                        }}
-                                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                                      >
-                                        Remove
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
+                              {item.compatibility_parts &&
+                              item.compatibility_parts.length > 0 ? (
+                                item.compatibility_parts.map((part, index) => {
+                                  const availableParts =
+                                    getAvailableCompatibleParts();
+                                  return (
+                                    <TableRow key={part.id || `new-${index}`}>
+                                      <TableCell>{index + 1}</TableCell>
+                                      <TableCell>
+                                        <Select
+                                          value={
+                                            part.id?.toString() || "placeholder"
+                                          }
+                                          onValueChange={(value) => {
+                                            if (value === "placeholder") return;
+                                            handleCompatiblePartChange(
+                                              index,
+                                              value
+                                            );
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select a compatible part..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem
+                                              value="placeholder"
+                                              disabled
+                                            >
+                                              Select a compatible part...
+                                            </SelectItem>
+                                            {availableParts.map((p) => (
+                                              <SelectItem
+                                                key={p.id}
+                                                value={p.id.toString()}
+                                              >
+                                                {p.name}
+                                              </SelectItem>
+                                            ))}
+                                            {part.id && (
+                                              <SelectItem
+                                                value={part.id.toString()}
+                                              >
+                                                {part.name} (Current)
+                                              </SelectItem>
+                                            )}
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            handleRemoveCompatiblePart(index)
+                                          }
+                                          className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-50"
+                                        >
+                                          <Trash2 size={16} />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })
+                              ) : (
+                                <TableRow>
+                                  <TableCell
+                                    colSpan={3}
+                                    className="text-center py-8 text-gray-500"
+                                  >
+                                    <p>
+                                      No compatible parts assigned to this item.
+                                    </p>
+                                  </TableCell>
+                                </TableRow>
+                              )}
                             </TableBody>
                           </Table>
                         </div>
-                      ) : (
-                        <div className="text-center py-8 text-gray-500 border rounded-lg">
-                          <p>No compatible parts selected yet.</p>
-                          <p className="text-sm mt-1">
-                            Select parts from the dropdown above
-                          </p>
-                        </div>
                       )}
-
-                      {/* Action buttons */}
-                      <div className="flex justify-end gap-2 pt-4 border-t">
-                        <Button
-                          variant="outline"
-                          className="bg-white hover:bg-slate-200"
-                          onClick={() => {
-                            if (selectedParts.length > 0) {
-                              setSelectedParts([]);
-                              toast.info("All parts cleared");
-                            }
-                          }}
-                          disabled={selectedParts.length === 0}
-                        >
-                          Clear All
-                        </Button>
-                        <Button
-                          className="bg-green-900 text-white hover:bg-green-700"
-                          onClick={async () => {
-                            if (selectedParts.length === 0) {
-                              toast.warning("Please select at least one part");
-                              return;
-                            }
-
-                            try {
-                              // Save the selected parts to the server
-                              await api.post(
-                                `/inventory/${id}/compatible-parts`,
-                                {
-                                  compatible_parts: selectedParts.map((id) =>
-                                    parseInt(id)
-                                  ),
-                                }
-                              );
-
-                              toast.success(
-                                "Compatible parts saved successfully"
-                              );
-                            } catch (error) {
-                              console.error(
-                                "Error saving compatible parts:",
-                                error
-                              );
-                              toast.error("Failed to save compatible parts");
-                            }
-                          }}
-                        >
-                          Save Compatible Parts
-                        </Button>
+                      <div className="flex justify-end pt-4">
+                        {item.compatibility_parts &&
+                          item.compatibility_parts.some(
+                            (p) => p.hasChanges
+                          ) && (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={handleSaveCompatibleParts}
+                              disabled={isSavingCompatibleParts}
+                            >
+                              {isSavingCompatibleParts ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  Saving...
+                                </>
+                              ) : (
+                                "Save Changes"
+                              )}
+                            </Button>
+                          )}
                       </div>
                     </CardContent>
                   </Card>

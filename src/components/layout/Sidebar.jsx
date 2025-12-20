@@ -69,6 +69,7 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         "/gate-out-security",
       ],
       procureFlow: ["/create-transfer"],
+      assetReceipts: ["/asset-receipts"],
       settings: [
         "/app-settings",
         "/category",
@@ -1116,6 +1117,68 @@ export const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                           onClick={() => setSidebarOpen(false)}
                         >
                           {isActiveRoute("/create-transfer") && (
+                            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
+                          )}
+                          Transfer
+                        </Link>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              )}
+              {/* ProcureFlow Dropdown */}
+              {hasPermission("view_item") && (
+                <li>
+                  <button
+                    className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors relative ${
+                      isMenuActive(["/assetReceipts"])
+                        ? "text-white"
+                        : "text-green-100 hover:bg-green-700 hover:text-white"
+                    }`}
+                    onClick={() => toggleMenu("assetReceipts")}
+                  >
+                    {isMenuActive(["/assetReceipts"]) && (
+                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-lg"></div>
+                    )}
+                    <div className="flex items-center">
+                      {/* Inventory icon with emerald color */}
+                      <span className="material-icons text-white mr-3">
+                        local_shipping
+                      </span>
+                      <span>Asset Receipts</span>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        openMenu === "assetReceipts"
+                          ? "transform rotate-180"
+                          : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {openMenu === "assetReceipts" && (
+                    <ul className="pl-9 mt-1 space-y-1">
+                      <li>
+                        <Link
+                          to="/asset-receipts"
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors relative ${
+                            isActiveRoute("/asset-receipts")
+                              ? "text-white"
+                              : "text-green-100 hover:bg-green-700 hover:text-white"
+                          }`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {isActiveRoute("/asset-receipts") && (
                             <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-green-400 rounded-r-lg"></div>
                           )}
                           Transfer

@@ -270,7 +270,7 @@ const ItemsIndex = () => {
     { key: "total_quantity", label: "Qty", type: "number", align: "center" },
     { key: "unit_cost", label: "Unit Cost", type: "currency", align: "center" },
     { key: "is_active", label: "Status", type: "badge" },
-    { key: "actions", label: "Actions", type: "actions" },
+    // { key: "actions", label: "Actions", type: "actions" },
   ];
 
   const tableFilters = [

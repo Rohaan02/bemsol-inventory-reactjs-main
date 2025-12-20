@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tab } from "@headlessui/react";
-import assetAPI from "@/lib/assetAPI"; // Adjust the import path
+import assetAPI from "@/lib/assetAPI";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import api from "@/lib/axiosConfig"; // Add this import
+import api from "@/lib/axiosConfig";
 
 import {
   ArrowLeft,
@@ -109,12 +109,12 @@ const ViewAsset = () => {
   const [compatibleParts, setCompatibleParts] = useState([]);
   const [selectedPart, setSelectedPart] = useState("placeholder");
   const [selectedParts, setSelectedParts] = useState([]);
+  const [isSavingCompatibleParts, setIsSavingCompatibleParts] = useState(false);
 
   // Accessories State
   const [accessories, setAccessories] = useState([]);
-  const [selectedAccessory, setSelectedAccessory] = useState("placeholder");
-  const [selectedAccessories, setSelectedAccessories] = useState([]);
   const [loadingAccessories, setLoadingAccessories] = useState(false);
+  const [isSavingAccessories, setIsSavingAccessories] = useState(false);
 
   const documentsData = [
     {
@@ -158,7 +158,14 @@ const ViewAsset = () => {
         accessoriesData = response.data.accessories;
       }
 
-      setAccessories(accessoriesData);
+      // Format accessories
+      const formattedAccessories = accessoriesData.map((acc) => ({
+        id: acc.id,
+        name: acc.name || acc.item_name || `Accessory ${acc.id}`,
+        hasChanges: false,
+      }));
+
+      setAccessories(formattedAccessories);
     } catch (error) {
       console.error("Error fetching accessories:", error);
       toast.error("Failed to fetch accessories");
@@ -182,6 +189,27 @@ const ViewAsset = () => {
       const response = await assetAPI.getById(id);
       const assetData = response.data ?? response;
       console.log("assetData", assetData);
+
+      // Format accessories with hasChanges flag
+      if (assetData.accessories) {
+        assetData.accessories = assetData.accessories.map((acc) => ({
+          ...acc,
+          name: acc.name || acc.item_name || `Accessory ${acc.id}`,
+          hasChanges: false,
+        }));
+      }
+
+      // Format compatible parts with hasChanges flag
+      if (assetData.compatibility_parts) {
+        assetData.compatibility_parts = assetData.compatibility_parts.map(
+          (part) => ({
+            ...part,
+            name: part.name || `Part ${part.id}`,
+            hasChanges: false,
+          })
+        );
+      }
+
       setAsset(assetData);
     } catch (error) {
       console.error(error);
@@ -303,22 +331,259 @@ const ViewAsset = () => {
     }
   };
 
-  // Save accessories function
-  const saveAccessories = async () => {
-    if (selectedAccessories.length === 0) {
+  // Handle adding a new row for accessories
+  const handleAddNewRow = () => {
+    const newAccessory = {
+      id: null, // Temporary id for new rows
+      name: "",
+      hasChanges: true,
+    };
+
+    setAsset((prev) => ({
+      ...prev,
+      accessories: [...(prev.accessories || []), newAccessory],
+    }));
+  };
+
+  // Get available accessories for dropdown (excluding already selected ones)
+  const getAvailableAccessories = () => {
+    if (!asset.accessories || !accessories.length) return accessories;
+
+    // Get IDs of accessories already in the table (excluding current row if editing)
+    const selectedAccessoryIds = asset.accessories
+      .filter((acc) => acc.id !== null)
+      .map((acc) => acc.id);
+
+    // Filter out accessories that are already in the table
+    return accessories.filter((acc) => !selectedAccessoryIds.includes(acc.id));
+  };
+
+  // Handle accessory selection change
+  const handleAccessoryChange = (index, accessoryId) => {
+    const selectedAccessory = accessories.find(
+      (acc) => acc.id.toString() === accessoryId
+    );
+
+    if (selectedAccessory) {
+      setAsset((prev) => {
+        const updatedAccessories = [...prev.accessories];
+        updatedAccessories[index] = {
+          ...selectedAccessory,
+          hasChanges: true,
+        };
+        return {
+          ...prev,
+          accessories: updatedAccessories,
+        };
+      });
+    }
+  };
+
+  // Handle removing an accessory
+  const handleRemoveAccessory = (index) => {
+    setAsset((prev) => {
+      const updatedAccessories = [...prev.accessories];
+      updatedAccessories.splice(index, 1);
+      return {
+        ...prev,
+        accessories: updatedAccessories,
+      };
+    });
+  };
+
+  // Handle saving accessories
+  const handleSaveAccessories = async () => {
+    if (!asset.accessories || asset.accessories.length === 0) {
+      toast.warning("No accessories to save");
+      return;
+    }
+
+    // Filter out empty/new rows without selection
+    const validAccessories = asset.accessories.filter((acc) => acc.id !== null);
+
+    if (validAccessories.length === 0) {
       toast.warning("Please select at least one accessory");
       return;
     }
 
+    // Check for duplicates
+    const accessoryIds = validAccessories.map((acc) => acc.id);
+    const uniqueIds = [...new Set(accessoryIds)];
+
+    if (uniqueIds.length !== accessoryIds.length) {
+      toast.error("Please remove duplicate accessories before saving");
+      return;
+    }
+
+    setIsSavingAccessories(true);
     try {
-      await api.post(`/assets/${id}/accessories`, {
-        accessories: selectedAccessories.map((id) => parseInt(id)),
+      // Get current compatibility part IDs
+      const compatibilityPartIds = asset.compatibility_parts
+        ? asset.compatibility_parts.map((part) => part.id)
+        : [];
+
+      // Update asset via API with both accessory_ids and compatibility_part_ids
+      await api.put(`/update-compatible-parts/${id}`, {
+        accessory_ids: accessoryIds,
+        compatibility_part_ids: compatibilityPartIds,
       });
+
+      // Update local state to clear hasChanges flags
+      setAsset((prev) => ({
+        ...prev,
+        accessories: prev.accessories
+          .filter((acc) => acc.id !== null)
+          .map((acc) => ({ ...acc, hasChanges: false })),
+      }));
 
       toast.success("Accessories saved successfully");
     } catch (error) {
       console.error("Error saving accessories:", error);
       toast.error("Failed to save accessories");
+    } finally {
+      setIsSavingAccessories(false);
+    }
+  };
+
+  // Handle adding a new row for compatible parts
+  const handleAddNewCompatiblePartRow = () => {
+    const newPart = {
+      id: null, // Temporary id for new rows
+      name: "",
+      hasChanges: true,
+    };
+
+    setAsset((prev) => ({
+      ...prev,
+      compatibility_parts: [...(prev.compatibility_parts || []), newPart],
+    }));
+  };
+
+  // Get available compatible parts for dropdown (excluding already selected ones)
+  const getAvailableCompatibleParts = () => {
+    if (!asset.compatibility_parts || !compatibleParts.length)
+      return compatibleParts;
+
+    // Get IDs of parts already in the table (excluding current row if editing)
+    const selectedPartIds = asset.compatibility_parts
+      .filter((part) => part.id !== null)
+      .map((part) => part.id);
+
+    // Filter out parts that are already in the table
+    return compatibleParts.filter((part) => !selectedPartIds.includes(part.id));
+  };
+
+  // Handle compatible part selection change
+  const handleCompatiblePartChange = (index, partId) => {
+    const selectedPart = compatibleParts.find(
+      (part) => part.id.toString() === partId
+    );
+
+    if (selectedPart) {
+      setAsset((prev) => {
+        const updatedParts = [...prev.compatibility_parts];
+        updatedParts[index] = {
+          ...selectedPart,
+          hasChanges: true,
+        };
+        return {
+          ...prev,
+          compatibility_parts: updatedParts,
+        };
+      });
+    }
+  };
+
+  // Handle removing a compatible part
+  const handleRemoveCompatiblePart = (index) => {
+    setAsset((prev) => {
+      const updatedParts = [...prev.compatibility_parts];
+      updatedParts.splice(index, 1);
+      return {
+        ...prev,
+        compatibility_parts: updatedParts,
+      };
+    });
+  };
+
+  // Handle saving compatible parts
+  const handleSaveCompatibleParts = async () => {
+    if (!asset.compatibility_parts || asset.compatibility_parts.length === 0) {
+      toast.warning("No compatible parts to save");
+      return;
+    }
+
+    // Filter out empty/new rows without selection
+    const validParts = asset.compatibility_parts.filter(
+      (part) => part.id !== null
+    );
+
+    if (validParts.length === 0) {
+      toast.warning("Please select at least one compatible part");
+      return;
+    }
+
+    // Check for duplicates
+    const partIds = validParts.map((part) => part.id);
+    const uniqueIds = [...new Set(partIds)];
+
+    if (uniqueIds.length !== partIds.length) {
+      toast.error("Please remove duplicate compatible parts before saving");
+      return;
+    }
+
+    setIsSavingCompatibleParts(true);
+    try {
+      // Get current accessory IDs
+      const accessoryIds = asset.accessories
+        ? asset.accessories
+            .filter((acc) => acc.id !== null)
+            .map((acc) => acc.id)
+        : [];
+
+      // Update asset via API with both compatibility_part_ids and accessory_ids
+      await api.put(`/update-compatible-parts/${id}`, {
+        compatibility_part_ids: partIds,
+        accessory_ids: accessoryIds,
+      });
+
+      // Update local state to clear hasChanges flags
+      setAsset((prev) => ({
+        ...prev,
+        compatibility_parts: prev.compatibility_parts
+          .filter((part) => part.id !== null)
+          .map((part) => ({ ...part, hasChanges: false })),
+      }));
+
+      toast.success("Compatible parts saved successfully");
+    } catch (error) {
+      console.error("Error saving compatible parts:", error);
+      toast.error("Failed to save compatible parts");
+    } finally {
+      setIsSavingCompatibleParts(false);
+    }
+  };
+
+  // Save compatible parts function (for the old Add Compatible Parts button)
+  const saveCompatibleParts = async () => {
+    if (selectedParts.length === 0) {
+      toast.warning("Please select at least one part");
+      return;
+    }
+
+    try {
+      await api.post(`/assets/${id}/compatible-parts`, {
+        compatible_parts: selectedParts.map((id) => parseInt(id)),
+      });
+
+      toast.success("Compatible parts saved successfully");
+      // Refresh the asset data to show the new parts
+      fetchAsset();
+      // Clear the selected parts
+      setSelectedParts([]);
+    } catch (error) {
+      console.error("Error saving compatible parts:", error);
+      toast.error("Failed to save compatible parts");
     }
   };
 
@@ -392,14 +657,13 @@ const ViewAsset = () => {
                           {asset.item_code}
                         </h2>
                         <Badge
-                          variant={asset.is_active ? "success" : "destructive"}
-                          className="text-xs"
+                          variant={asset.status === 1 ? "success" : "secondary"}
                         >
-                          {asset.is_active ? "Active" : "Inactive"}
+                          {asset.status === 1 ? "Active" : "Inactive"}
                         </Badge>
                         {asset.is_serialized && (
                           <Badge
-                            variant="outline"
+                            variant="success"
                             className="border-blue-300 text-blue-700"
                           >
                             <Tag size={12} className="mr-1" />
@@ -413,14 +677,6 @@ const ViewAsset = () => {
                       <p className="text-gray-600 text-sm mt-1">
                         {asset.model_no}
                       </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-green-700">
-                        {asset.unit_cost
-                          ? `$${parseFloat(asset.unit_cost).toLocaleString()}`
-                          : "—"}
-                      </div>
-                      <p className="text-sm text-gray-500">Unit Cost</p>
                     </div>
                   </div>
 
@@ -478,13 +734,6 @@ const ViewAsset = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem
-                      onClick={handleEdit}
-                      className="flex items-center gap-2 text-black cursor-pointer"
-                    >
-                      <Edit size={16} />
-                      Edit Asset
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
                       onClick={handleArchive}
                       className="flex items-center gap-2 text-yellow-600 cursor-pointer"
                     >
@@ -503,7 +752,7 @@ const ViewAsset = () => {
 
                 <Button
                   onClick={handleEdit}
-                  variant="outline"
+                  variant="success"
                   size="sm"
                   className="flex items-center gap-1 text-black bg-white hover:bg-gray-100 px-3 py-2"
                 >
@@ -518,7 +767,7 @@ const ViewAsset = () => {
         {/* Tabs Section with Sidebar */}
         <div className="flex-1 flex overflow-hidden bg-white-50">
           {/* Main Content Area */}
-          <div className="flex-1 overflow-y-hidden p-4 md:p-6">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
             {/* Tabs Section */}
             <Tab.Group
               selectedIndex={activeTab}
@@ -842,92 +1091,6 @@ const ViewAsset = () => {
                         <Card className="bg-white shadow-sm">
                           <CardHeader>
                             <CardTitle className="text-green-600">
-                              Asset Status
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <span className="text-gray-600">Status</span>
-                                <Badge
-                                  variant={
-                                    asset.status === 1 ? "success" : "secondary"
-                                  }
-                                >
-                                  {asset.status === 1 ? "Active" : "Inactive"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-gray-600">
-                                  Maintenance Required
-                                </span>
-                                <Badge
-                                  variant={
-                                    asset.maintenance === "yes"
-                                      ? "warning"
-                                      : "outline"
-                                  }
-                                >
-                                  {asset.maintenance === "yes" ? "Yes" : "No"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-gray-600">
-                                  Total Quantity
-                                </span>
-                                <span className="font-bold text-lg">
-                                  {asset.total_quantity || 0}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-gray-600">
-                                  Reorder Level
-                                </span>
-                                <span className="font-medium">
-                                  {asset.reorder_level || "Not set"}
-                                </span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* <Card className="bg-white shadow-sm">
-                          <CardHeader>
-                            <CardTitle className="text-green-600">
-                              Category Information
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            {asset.category ? (
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    Category Name
-                                  </span>
-                                  <span className="font-medium">
-                                    {asset.category.category_name}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    Category Code
-                                  </span>
-                                  <span className="font-mono">
-                                    {asset.category.code}
-                                  </span>
-                                </div>
-                              </div>
-                            ) : (
-                              <p className="text-gray-500 italic">
-                                No category information
-                              </p>
-                            )}
-                          </CardContent>
-                        </Card> */}
-
-                        <Card className="bg-white shadow-sm">
-                          <CardHeader>
-                            <CardTitle className="text-green-600">
                               Asset Comments
                             </CardTitle>
                           </CardHeader>
@@ -1234,10 +1397,19 @@ const ViewAsset = () => {
                 <Tab.Panel>
                   {/* ACCESSORIES TAB */}
                   <Card className="bg-white shadow-sm">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                       <CardTitle className="text-green-600">
                         Accessories
                       </CardTitle>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={handleAddNewRow}
+                      >
+                        <Plus size={16} />
+                        Add Row
+                      </Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       {loadingAccessories ? (
@@ -1246,415 +1418,264 @@ const ViewAsset = () => {
                           <span>Loading accessories...</span>
                         </div>
                       ) : (
-                        <>
-                          {/* Current Accessories Table */}
-                          <div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                              Current Accessories
-                            </h3>
-                            {asset.accessories &&
-                            asset.accessories.length > 0 ? (
-                              <div className="border rounded-lg overflow-hidden">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead className="w-12">#</TableHead>
-                                      <TableHead>Accessory Name</TableHead>
-                                      <TableHead>ID</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {asset.accessories.map(
-                                      (accessory, index) => (
-                                        <TableRow key={accessory.id}>
-                                          <TableCell>{index + 1}</TableCell>
-                                          <TableCell className="font-medium">
-                                            {accessory.name ||
-                                              accessory.item_name ||
-                                              `Accessory ${accessory.id}`}
-                                          </TableCell>
-                                          <TableCell className="text-gray-500">
-                                            {accessory.id}
-                                          </TableCell>
-                                        </TableRow>
-                                      )
-                                    )}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            ) : (
-                              <div className="text-center py-8 text-gray-500 border rounded-lg">
-                                <Package
-                                  size={48}
-                                  className="mx-auto text-gray-400 mb-4"
-                                />
-                                <p>No accessories assigned to this asset.</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Add New Accessories Section */}
-                          <div className="pt-6 border-t">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                              Add New Accessories
-                            </h3>
-                            <div className="flex items-start gap-4">
-                              <div className="flex-1 space-y-2">
-                                <label className="text-sm font-medium text-gray-700">
-                                  Select Accessories
-                                </label>
-                                <Select
-                                  value={selectedAccessory}
-                                  onValueChange={(value) => {
-                                    if (value && value !== "placeholder") {
-                                      if (
-                                        !selectedAccessories.includes(value)
-                                      ) {
-                                        setSelectedAccessories([
-                                          ...selectedAccessories,
-                                          value,
-                                        ]);
-                                      }
-                                      setSelectedAccessory("placeholder");
-                                    }
-                                  }}
-                                  className="w-full"
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select an accessory..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="placeholder" disabled>
-                                      Select an accessory...
-                                    </SelectItem>
-                                    {accessories
-                                      .filter(
-                                        (accessory) =>
-                                          !selectedAccessories.includes(
-                                            accessory.id.toString()
-                                          ) &&
-                                          !asset.accessories?.some(
-                                            (a) => a.id === accessory.id
-                                          )
-                                      )
-                                      .map((accessory) => (
-                                        <SelectItem
-                                          key={accessory.id}
-                                          value={accessory.id.toString()}
+                        <div className="border rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12">#</TableHead>
+                                <TableHead>Accessory</TableHead>
+                                <TableHead className="w-24">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {asset.accessories &&
+                              asset.accessories.length > 0 ? (
+                                asset.accessories.map((accessory, index) => {
+                                  const availableAccessories =
+                                    getAvailableAccessories();
+                                  return (
+                                    <TableRow
+                                      key={accessory.id || `new-${index}`}
+                                    >
+                                      <TableCell>{index + 1}</TableCell>
+                                      <TableCell>
+                                        <Select
+                                          value={
+                                            accessory.id?.toString() ||
+                                            "placeholder"
+                                          }
+                                          onValueChange={(value) => {
+                                            if (value === "placeholder") return;
+                                            handleAccessoryChange(index, value);
+                                          }}
                                         >
-                                          {accessory.name ||
-                                            accessory.item_name ||
-                                            `Accessory ${accessory.id}`}
-                                        </SelectItem>
-                                      ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            {/* Selected accessories to add table */}
-                            {selectedAccessories.length > 0 && (
-                              <div className="mt-6">
-                                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                  Accessories to Add
-                                </h4>
-                                <div className="border rounded-lg overflow-hidden">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead className="w-12">
-                                          #
-                                        </TableHead>
-                                        <TableHead>Accessory Name</TableHead>
-                                        <TableHead>Actions</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {selectedAccessories.map(
-                                        (accessoryId, index) => {
-                                          const accessory = accessories.find(
-                                            (a) =>
-                                              a.id.toString() === accessoryId
-                                          );
-                                          return (
-                                            <TableRow key={accessoryId}>
-                                              <TableCell>{index + 1}</TableCell>
-                                              <TableCell className="font-medium">
-                                                {accessory
-                                                  ? accessory.name ||
-                                                    accessory.item_name ||
-                                                    `Accessory ${accessory.id}`
-                                                  : "Unknown Accessory"}
-                                              </TableCell>
-                                              <TableCell>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    setSelectedAccessories(
-                                                      selectedAccessories.filter(
-                                                        (id) =>
-                                                          id !== accessoryId
-                                                      )
-                                                    );
-                                                  }}
-                                                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                                                >
-                                                  Remove
-                                                </Button>
-                                              </TableCell>
-                                            </TableRow>
-                                          );
-                                        }
-                                      )}
-                                    </TableBody>
-                                  </Table>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Action buttons */}
-                            <div className="flex justify-end gap-2 pt-6 border-t">
-                              <Button
-                                variant="outline"
-                                className="bg-white hover:bg-slate-200"
-                                onClick={() => {
-                                  if (selectedAccessories.length > 0) {
-                                    setSelectedAccessories([]);
-                                    toast.info(
-                                      "All pending accessories cleared"
-                                    );
-                                  }
-                                }}
-                                disabled={selectedAccessories.length === 0}
-                              >
-                                Clear Pending
-                              </Button>
-                              <Button
-                                className="bg-green-900 text-white hover:bg-green-700"
-                                onClick={saveAccessories}
-                                disabled={selectedAccessories.length === 0}
-                              >
-                                Add Accessories
-                              </Button>
-                            </div>
-                          </div>
-                        </>
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select an accessory..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem
+                                              value="placeholder"
+                                              disabled
+                                            >
+                                              Select an accessory...
+                                            </SelectItem>
+                                            {availableAccessories.map((acc) => (
+                                              <SelectItem
+                                                key={acc.id}
+                                                value={acc.id.toString()}
+                                              >
+                                                {acc.name}
+                                              </SelectItem>
+                                            ))}
+                                            {accessory.id && (
+                                              <SelectItem
+                                                value={accessory.id.toString()}
+                                              >
+                                                {accessory.name} (Current)
+                                              </SelectItem>
+                                            )}
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            handleRemoveAccessory(index)
+                                          }
+                                          className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-50"
+                                        >
+                                          <Trash2 size={16} />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })
+                              ) : (
+                                <TableRow>
+                                  <TableCell
+                                    colSpan={3}
+                                    className="text-center py-8 text-gray-500"
+                                  >
+                                    <Package
+                                      size={48}
+                                      className="mx-auto text-gray-400 mb-4"
+                                    />
+                                    <p>
+                                      No accessories assigned to this asset.
+                                    </p>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
                       )}
+                      <div className="flex justify-end pt-4">
+                        {asset.accessories &&
+                          asset.accessories.some((a) => a.hasChanges) && (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={handleSaveAccessories}
+                              disabled={isSavingAccessories}
+                            >
+                              {isSavingAccessories ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  Saving...
+                                </>
+                              ) : (
+                                "Save Changes"
+                              )}
+                            </Button>
+                          )}
+                      </div>
                     </CardContent>
                   </Card>
                 </Tab.Panel>
+
                 <Tab.Panel>
                   {/* COMPATIBLE PARTS TAB */}
                   <Card className="bg-white shadow-sm">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                       <CardTitle className="text-green-600">
                         Compatible Parts
                       </CardTitle>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={handleAddNewCompatiblePartRow}
+                      >
+                        <Plus size={16} />
+                        Add Row
+                      </Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {/* Current Compatible Parts Table */}
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">
-                          Current Compatible Parts
-                        </h3>
-                        {asset.compatibility_parts &&
-                        asset.compatibility_parts.length > 0 ? (
-                          <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="w-12">#</TableHead>
-                                  <TableHead>Part Name</TableHead>
-                                  <TableHead>ID</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {asset.compatibility_parts.map(
-                                  (part, index) => (
-                                    <TableRow key={part.id}>
+                      {loadingAccessories ? (
+                        <div className="flex justify-center items-center py-8">
+                          <Loader2 className="h-8 w-8 animate-spin text-green-600 mr-2" />
+                          <span>Loading compatible parts...</span>
+                        </div>
+                      ) : (
+                        <div className="border rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12">#</TableHead>
+                                <TableHead>Compatible Part</TableHead>
+                                <TableHead className="w-24">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {asset.compatibility_parts &&
+                              asset.compatibility_parts.length > 0 ? (
+                                asset.compatibility_parts.map((part, index) => {
+                                  const availableParts =
+                                    getAvailableCompatibleParts();
+                                  return (
+                                    <TableRow key={part.id || `new-${index}`}>
                                       <TableCell>{index + 1}</TableCell>
-                                      <TableCell className="font-medium">
-                                        {part.name || `Part ${part.id}`}
+                                      <TableCell>
+                                        <Select
+                                          value={
+                                            part.id?.toString() || "placeholder"
+                                          }
+                                          onValueChange={(value) => {
+                                            if (value === "placeholder") return;
+                                            handleCompatiblePartChange(
+                                              index,
+                                              value
+                                            );
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select a compatible part..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem
+                                              value="placeholder"
+                                              disabled
+                                            >
+                                              Select a compatible part...
+                                            </SelectItem>
+                                            {availableParts.map((p) => (
+                                              <SelectItem
+                                                key={p.id}
+                                                value={p.id.toString()}
+                                              >
+                                                {p.name}
+                                              </SelectItem>
+                                            ))}
+                                            {part.id && (
+                                              <SelectItem
+                                                value={part.id.toString()}
+                                              >
+                                                {part.name} (Current)
+                                              </SelectItem>
+                                            )}
+                                          </SelectContent>
+                                        </Select>
                                       </TableCell>
-                                      <TableCell className="text-gray-500">
-                                        {part.id}
+                                      <TableCell>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            handleRemoveCompatiblePart(index)
+                                          }
+                                          className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-50"
+                                        >
+                                          <Trash2 size={16} />
+                                        </Button>
                                       </TableCell>
                                     </TableRow>
-                                  )
-                                )}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 text-gray-500 border rounded-lg">
-                            <Cpu
-                              size={48}
-                              className="mx-auto text-gray-400 mb-4"
-                            />
-                            <p>No compatible parts assigned to this asset.</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Add New Compatible Parts Section */}
-                      <div className="pt-6 border-t">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">
-                          Add New Compatible Parts
-                        </h3>
-                        <div className="flex items-start gap-4">
-                          <div className="flex-1 space-y-2">
-                            <label className="text-sm font-medium text-gray-700">
-                              Select Compatible Parts
-                            </label>
-                            <Select
-                              value={selectedPart}
-                              onValueChange={(value) => {
-                                if (value && value !== "placeholder") {
-                                  if (!selectedParts.includes(value)) {
-                                    setSelectedParts([...selectedParts, value]);
-                                  }
-                                  setSelectedPart("placeholder");
-                                }
-                              }}
-                              className="w-full"
+                                  );
+                                })
+                              ) : (
+                                <TableRow>
+                                  <TableCell
+                                    colSpan={3}
+                                    className="text-center py-8 text-gray-500"
+                                  >
+                                    <Cpu
+                                      size={48}
+                                      className="mx-auto text-gray-400 mb-4"
+                                    />
+                                    <p>
+                                      No compatible parts assigned to this
+                                      asset.
+                                    </p>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                      <div className="flex justify-end pt-4">
+                        {asset.compatibility_parts &&
+                          asset.compatibility_parts.some(
+                            (p) => p.hasChanges
+                          ) && (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={handleSaveCompatibleParts}
+                              disabled={isSavingCompatibleParts}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a compatible part..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="placeholder" disabled>
-                                  Select a part...
-                                </SelectItem>
-                                {compatibleParts
-                                  .filter(
-                                    (part) =>
-                                      !selectedParts.includes(
-                                        part.id.toString()
-                                      ) &&
-                                      !asset.compatibility_parts?.some(
-                                        (p) => p.id === part.id
-                                      )
-                                  )
-                                  .map((part) => (
-                                    <SelectItem
-                                      key={part.id}
-                                      value={part.id.toString()}
-                                    >
-                                      {part.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        {/* Selected parts to add table */}
-                        {selectedParts.length > 0 && (
-                          <div className="mt-6">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">
-                              Parts to Add
-                            </h4>
-                            <div className="border rounded-lg overflow-hidden">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-12">#</TableHead>
-                                    <TableHead>Part Name</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {selectedParts.map((partId, index) => {
-                                    const part = compatibleParts.find(
-                                      (p) => p.id.toString() === partId
-                                    );
-                                    return (
-                                      <TableRow key={partId}>
-                                        <TableCell>{index + 1}</TableCell>
-                                        <TableCell className="font-medium">
-                                          {part ? part.name : "Unknown Part"}
-                                        </TableCell>
-                                        <TableCell>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                              setSelectedParts(
-                                                selectedParts.filter(
-                                                  (id) => id !== partId
-                                                )
-                                              );
-                                            }}
-                                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                                          >
-                                            Remove
-                                          </Button>
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  })}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Action buttons */}
-                        <div className="flex justify-end gap-2 pt-6 border-t">
-                          <Button
-                            variant="outline"
-                            className="bg-white hover:bg-slate-200"
-                            onClick={() => {
-                              if (selectedParts.length > 0) {
-                                setSelectedParts([]);
-                                toast.info("All pending parts cleared");
-                              }
-                            }}
-                            disabled={selectedParts.length === 0}
-                          >
-                            Clear Pending
-                          </Button>
-                          <Button
-                            className="bg-green-900 text-white hover:bg-green-700"
-                            onClick={async () => {
-                              if (selectedParts.length === 0) {
-                                toast.warning(
-                                  "Please select at least one part"
-                                );
-                                return;
-                              }
-
-                              try {
-                                await api.post(
-                                  `/assets/${id}/compatible-parts`,
-                                  {
-                                    compatible_parts: selectedParts.map((id) =>
-                                      parseInt(id)
-                                    ),
-                                  }
-                                );
-
-                                toast.success(
-                                  "Compatible parts saved successfully"
-                                );
-                                // Refresh the asset data to show the new parts
-                                fetchAsset();
-                                // Clear the selected parts
-                                setSelectedParts([]);
-                              } catch (error) {
-                                console.error(
-                                  "Error saving compatible parts:",
-                                  error
-                                );
-                                toast.error("Failed to save compatible parts");
-                              }
-                            }}
-                            disabled={selectedParts.length === 0}
-                          >
-                            Add Compatible Parts
-                          </Button>
-                        </div>
+                              {isSavingCompatibleParts ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  Saving...
+                                </>
+                              ) : (
+                                "Save Changes"
+                              )}
+                            </Button>
+                          )}
                       </div>
                     </CardContent>
                   </Card>

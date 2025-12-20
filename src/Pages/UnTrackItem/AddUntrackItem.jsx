@@ -153,11 +153,11 @@ const AddUntrackItem = () => {
   return (
     <div className="flex h-full min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen bg-gray-50">
-        <Header />
+        {/* <Header /> */}
 
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="bg-white shadow-lg rounded-2xl border border-gray-200 flex flex-col h-full">

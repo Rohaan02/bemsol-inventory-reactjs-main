@@ -89,6 +89,7 @@ import AssetIndex from "./Pages/Assets/AssetIndex";
 import AddAsset from "./Pages/Assets/AddAsset";
 import EditAsset from "./Pages/Assets/EditAsset";
 import ViewAsset from "./Pages/Assets/ViewAsset";
+import AssetReceiptIndex from "./Pages/AssetReceipt/AssetReceiptIndex";
 
 function App() {
   // const location = useLocation();
@@ -131,6 +132,16 @@ function App() {
               path="vbr-management/dispatch"
               element={<DispatchApproval />}
             />
+            <Route path="asset-receipts" element={<AssetReceiptIndex />} />
+            {/* <Route
+              path="create-asset-receipts"
+              element={<CreateAssetReceipt />}
+            />
+            <Route
+              path="asset-receipt/update/:id"
+              element={<UpdateAssetReceipt />}
+            />
+            <Route path="asset-receipt/:id" element={<ViewAssetReceipt />} /> */}
             <Route path="gate-pass" element={<GateOutward />} />
             <Route path="gate-out" element={<GateOutRequest />} />
             <Route path="no-gate-in" element={<NoVBRGateIn />} />

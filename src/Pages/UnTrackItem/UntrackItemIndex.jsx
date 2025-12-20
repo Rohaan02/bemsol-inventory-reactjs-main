@@ -228,7 +228,7 @@ const UntrackItemIndex = () => {
     { key: "quantity", label: "Qty", type: "text" },
     { key: "weight_display", label: "Weight", type: "text" },
     { key: "condition", label: "Condition", type: "text" },
-    { key: "archived", label: "Status", type: "badge" },
+    // { key: "archived", label: "Status", type: "badge" },
     // Remove duplicate actions column - DataTable should handle this automatically
   ];
 
@@ -331,12 +331,12 @@ const UntrackItemIndex = () => {
         <div className="text-xs text-gray-500">{item.category?.code || ""}</div>
       </div>
     ),
-    archived: (item) =>
-      item.archived ? (
-        <Badge variant="destructive">Archived</Badge>
-      ) : (
-        <Badge variant="success">Active</Badge>
-      ),
+    // archived: (item) =>
+    //   item.archived ? (
+    //     <Badge variant="destructive">Archived</Badge>
+    //   ) : (
+    //     <Badge variant="success">Active</Badge>
+    //   ),
   };
 
   return (

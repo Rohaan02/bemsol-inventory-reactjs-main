@@ -576,12 +576,11 @@ const DataTable = ({
                   )}
 
                   {/* Actions Column */}
-                  {rowActions.length > 0 &&
-                    visibleColumns.includes("actions") && (
-                      <th className="px-4 py-3 bg-gray-100 text-center">
-                        Actions
-                      </th>
-                    )}
+                  {rowActions.length > 0 && (
+                    <th className="px-4 py-3 bg-gray-100 text-center">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -628,50 +627,45 @@ const DataTable = ({
                     )}
 
                     {/* Actions Cell */}
-                    {rowActions.length > 0 &&
-                      visibleColumns.includes("actions") && (
-                        <td className="px-4 py-3">
-                          <div className="flex justify-center">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="p-2"
-                                >
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="min-w-[140px]"
-                              >
-                                {rowActions.map((action) => {
-                                  if (
-                                    action.showCondition &&
-                                    !action.showCondition(item)
-                                  ) {
-                                    return null;
-                                  }
-                                  return (
-                                    <DropdownMenuItem
-                                      key={action.key}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        action.onClick(item);
-                                      }}
-                                      className="flex items-center gap-2 cursor-pointer"
-                                    >
-                                      {action.icon}
-                                      <span>{action.label}</span>
-                                    </DropdownMenuItem>
-                                  );
-                                })}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </td>
-                      )}
+                    {rowActions.length > 0 && (
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="p-2">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="min-w-[140px]"
+                            >
+                              {rowActions.map((action) => {
+                                if (
+                                  action.showCondition &&
+                                  !action.showCondition(item)
+                                ) {
+                                  return null;
+                                }
+                                return (
+                                  <DropdownMenuItem
+                                    key={action.key}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      action.onClick(item);
+                                    }}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                  >
+                                    {action.icon}
+                                    <span>{action.label}</span>
+                                  </DropdownMenuItem>
+                                );
+                              })}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

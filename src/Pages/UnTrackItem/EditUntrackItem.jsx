@@ -258,9 +258,9 @@ const EditUntrackItem = () => {
   if (fetching) {
     return (
       <div className="flex h-full min-h-screen bg-gray-100">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="flex-1 flex flex-col">
-          <Header />
+          {/* <Header /> */}
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -277,12 +277,12 @@ const EditUntrackItem = () => {
   return (
     <div className="flex h-full min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <Header />
+        {/* <Header /> */}
 
         {/* Page Content */}
         <main className="flex-1 p-6 overflow-y-auto">

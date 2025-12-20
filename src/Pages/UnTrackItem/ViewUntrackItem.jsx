@@ -7,8 +7,8 @@ import untrackItemAPI from "../../lib/untrackItemAPI";
 import InventoryItemAPI from "../../lib/InventoryItemApi";
 
 // Layout imports
-import { Sidebar } from "../../components/layout/Sidebar";
-import { Header } from "../../components/layout/Header";
+// import { Sidebar } from "../../components/layout/Sidebar";
+// import { Header } from "../../components/layout/Header";
 import {
   Card,
   CardContent,
@@ -112,9 +112,9 @@ const ViewUntrackItem = () => {
   if (loading) {
     return (
       <div className="flex h-full min-h-screen bg-gray-100">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="flex-1 flex flex-col">
-          <Header />
+          {/* <Header /> */}
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -131,9 +131,9 @@ const ViewUntrackItem = () => {
   if (!itemData) {
     return (
       <div className="flex h-full min-h-screen bg-gray-100">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="flex-1 flex flex-col">
-          <Header />
+          {/* <Header /> */}
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="text-center py-12">
               <p className="text-gray-500">Item not found</p>
@@ -153,12 +153,12 @@ const ViewUntrackItem = () => {
   return (
     <div className="flex h-full min-h-screen bg-white-50">
       {/* Sidebar */}
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <Header />
+        {/* <Header /> */}
 
         {/* Page Content */}
         <main className="flex-1 p-6 overflow-y-auto">
